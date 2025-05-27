@@ -1,20 +1,2 @@
-function toggleSecret() {
-  const secret = document.getElementById('secret-content');
-  const devInfo = document.getElementById('developer-info');
-  if (secret.style.display === 'block') {
-    secret.style.display = 'none';
-  } else {
-    devInfo.style.display = 'none';
-    secret.style.display = 'block';
-  }
-}
-function toggleDeveloperInfo() {
-  const secret = document.getElementById('secret-content');
-  const devInfo = document.getElementById('developer-info');
-  if (devInfo.style.display === 'block') {
-    devInfo.style.display = 'none';
-  } else {
-    secret.style.display = 'none';
-    devInfo.style.display = 'block';
-  }
-}
+function toggleSecret() { const secret = document.getElementById('secret-content'); const devInfo = document.getElementById('developer-info'); if (secret.style.display === 'block') { secret.style.display = 'none'; } else { devInfo.style.display = 'none'; secret.style.display = 'block'; } }
+function toggleDeveloperInfo() { const secret = document.getElementById('secret-content'); const devInfo = document.getElementById('developer-info'); if (devInfo.style.display === 'block') { devInfo.style.display = 'none'; } else { secret.style.display = 'none'; devInfo.style.display = 'block'; } }

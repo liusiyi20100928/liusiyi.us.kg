@@ -1,0 +1,10 @@
+{
+  "A001": {
+    "text": "这是编号 A001 的示例信息。",
+    "image": "image/huiyi1.jpg"
+  },
+  "B002": {
+    "text": "这是编号 B002 的示例信息。",
+    "image": "image/huiyi2.jpg"
+  }
+}
