@@ -46,46 +46,19 @@
         sec.innerHTML = '<p class="notice">加载相册失败。</p>';
       }
     });
-    
-    document.getElementById('btn-info').addEventListener('click', () => {
+    document.getElementById('btn-info').addEventListener('click', async () => {
       hideAllSections();
       const sec = document.getElementById('section-info');
       sec.style.display = 'block';
-      sec.innerHTML = `
-        <div class="query-container">
-          <input placeholder="请输入姓名（完全匹配）" id="search-input">
-          <button id="search-btn">查询</button>
-          <div id="list"></div>
-        </div>`;
-      document.getElementById('search-btn').addEventListener('click', renderList);
-    });
-
-    function renderList(){
-      const arr = loadData();
-      const key = document.getElementById('search-input').value.trim();
-      const filtered = key ? arr.filter(x=> x.name === key) : arr;
-      const container = document.getElementById('list');
-      container.innerHTML = '';
-      if (!filtered.length) {
-        container.innerHTML = '<p>未找到记录。</p>';
-        return;
+      try {
+        const resp = await fetch('data/info.txt');
+        const text = await resp.text();
+        sec.innerHTML = `<pre class="info-text">${text}</pre>`;
+      } catch (err) {
+        console.error(err);
+        sec.innerHTML = '<p class="notice">加载信息失败。</p>';
       }
-      filtered.forEach(x=>{
-        const card = document.createElement('div');
-        card.className = 'profile-card';
-        card.innerHTML = `
-          <img src="${x.photo}" class="profile-photo">
-          <div class="info">
-            <p><strong>姓名：</strong>${x.name}</p>
-            <p><strong>班级：</strong>${x.cls}</p>
-            <p><strong>手机号：</strong>${x.phone}</p>
-            <p><strong>微信：</strong>${x.wx}</p>
-            <p><strong>QQ：</strong>${x.qq}</p>
-          </div>`;
-        container.appendChild(card);
-      });
-    }
-
+    });
     document.getElementById('btn-help').addEventListener('click', async () => {
       hideAllSections();
       const sec = document.getElementById('section-help');
