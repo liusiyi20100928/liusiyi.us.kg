@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>查询页面 - 九年级回忆手册</title>
+  <link rel="stylesheet" href="chaxun_style.css">
+</head>
+<body>
+  <div class="nav-back"><button onclick="window.location.href='index.html'">← 返回主页面</button></div>
+  <h1 class="page-title">查询页面</h1>
+  <div class="btn-container">
+    <button id="btn-album">回忆相册</button>
+    <button id="btn-info">信息查询</button>
+    <button id="btn-help">寻求帮助</button>
+  </div>
+  <div id="section-album" class="section-content"></div>
+  <div id="section-info" class="section-content"></div>
+  <div id="section-help" class="section-content"></div>
+  <script>
+    document.getElementById('btn-album').addEventListener('click', async () => {
+      hideAllSections();
+      const sec = document.getElementById('section-album');
+      sec.style.display = 'block';
+      try {
+        const resp = await fetch('data/images.json');
+        const images = await resp.json();
+        if (!images.length) {
+          sec.innerHTML = '<p class="notice">暂无回忆相册图片。</p>';
+          return;
+        }
+        sec.innerHTML = '';
+        images.forEach(src => {
+          const filename = src.split('/').pop();
+          const label = filename.replace(/\.[^/.]+$/, '');
+          const div = document.createElement('div');
+          div.className = 'album-item';
+          div.innerHTML = `
+            <div class="album-label">${label}</div>
+            <img src="${src}" alt="${label}" />
+          `;
+          sec.appendChild(div);
+        });
+      } catch (err) {
+        console.error(err);
+        sec.innerHTML = '<p class="notice">加载相册失败。</p>';
+      }
+    });
+    document.getElementById('btn-info').addEventListener('click', async () => {
+      hideAllSections();
+      const sec = document.getElementById('section-info');
+      sec.style.display = 'block';
+      try {
+        const resp = await fetch('data/info.txt');
+        const text = await resp.text();
+        sec.innerHTML = `<pre class="info-text">${text}</pre>`;
+      } catch (err) {
+        console.error(err);
+        sec.innerHTML = '<p class="notice">加载信息失败。</p>';
+      }
+    });
+    document.getElementById('btn-help').addEventListener('click', async () => {
+      hideAllSections();
+      const sec = document.getElementById('section-help');
+      sec.style.display = 'block';
+      try {
+        const resp = await fetch('data/help.txt');
+        const link = (await resp.text()).trim();
+        sec.innerHTML = \`
+          <p class="help-text">点击下面按钮加入QQ群：</p>
+          <p><a href="\${link}" target="_blank" class="qq-link">加入QQ群</a></p>
+        \`;
+      } catch (err) {
+        console.error(err);
+        sec.innerHTML = '<p class="notice">加载帮助链接失败。</p>';
+      }
+    });
+    function hideAllSections() {
+      document.querySelectorAll('.section-content').forEach(div => div.style.display = 'none');
+    }
+  </script>
+</body>
+</html>
