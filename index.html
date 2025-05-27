@@ -1,45 +1,35 @@
-
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>学生信息查询</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>九年级回忆手册</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
-  <script src="script.js"></script>
 </head>
 <body>
-  <h1>学生信息查询</h1>
-  <input placeholder="请输入姓名（完全匹配）" id="search-input">
-  <button onclick="renderList()">查询</button>
-  <div id="list"></div>
-
-  <script>
-  function renderList(){
-    const arr = loadData();
-    const key = document.getElementById('search-input').value.trim();
-    const filtered = key ? arr.filter(x=> x.name === key) : arr;
-    const container = document.getElementById('list');
-    container.innerHTML = '';
-    if (!filtered.length) {
-      container.innerHTML = '<p>未找到记录。</p>';
-      return;
-    }
-    filtered.forEach(x=>{
-      const card = document.createElement('div');
-      card.className = 'profile-card';
-      card.innerHTML = `
-        <img src="${x.photo}" class="profile-photo">
-        <div class="info">
-          <p><strong>姓名：</strong>${x.name}</p>
-          <p><strong>班级：</strong>${x.cls}</p>
-          <p><strong>手机号：</strong>${x.phone}</p>
-          <p><strong>微信：</strong>${x.wx}</p>
-          <p><strong>QQ：</strong>${x.qq}</p>
-        </div>`;
-      container.appendChild(card);
-    });
-  }
-  </script>
+  <div class="background-blur"></div>
+  <div class="shooting-star"></div>
+  <div class="shooting-star"></div>
+  <div class="shooting-star"></div>
+  <div class="content">
+    <h1>九年级回忆手册</h1>
+    <button class="start-button" onclick="window.location.href='chaxun.html'">开始查询</button>
+    <button class="secret-button" onclick="toggleSecret()">我的秘密</button>
+    <div id="secret-content" class="secret-content">
+      <div class="heart">
+        <span>我爱你</span>
+        <div class="name">张雅娟</div>
+      </div>
+    </div>
+    <footer>
+      <p onclick="toggleDeveloperInfo()">点击说明</p>
+      <div id="developer-info" class="developer-info">
+        <p>开发者：刘思奕</p>
+        <p>联系方式：14706654439</p>
+        <p>QQ：3573926115</p>
+      </div>
+    </footer>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
