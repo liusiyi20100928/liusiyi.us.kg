@@ -10,27 +10,46 @@
     h1 { text-align: center; color: #d6336c; margin-bottom: 20px; }
     .section { background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 30px; }
     .section h2 { margin-top: 0; color: #c0392b; }
-    label, textarea, input, button { font-family: 'Quicksand', sans-serif; }
-    textarea { width: 100%; height: 120px; border: 1px solid #ccc; border-radius: 8px; padding: 10px; resize: vertical; margin-bottom: 10px; }
-    input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; }
-    button { padding: 10px 20px; background-color: #ff99aa; border: none; border-radius: 8px; color: white; cursor: pointer; margin-right: 10px; }
+    label, input, button { font-family: 'Quicksand', sans-serif; }
+    input[type="text"], input[type="file"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; }
+    button { padding: 8px 16px; background-color: #ff99aa; border: none; border-radius: 8px; color: white; cursor: pointer; margin-right: 6px; }
     button:hover { background-color: #ff8099; }
+    .message { margin-top: 10px; color: green; }
+    /* 相册列表 */
     .album-list { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
     .album-item { position: relative; width: 120px; text-align: center; }
     .album-item img { width: 100%; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .album-item span { display: block; margin-top: 6px; font-size: 14px; color: #333; }
     .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(255,0,0,0.8); border: none; border-radius: 50%; width: 20px; height: 20px; color: white; font-size: 14px; line-height: 18px; cursor: pointer; }
     .delete-btn:hover { background: rgba(255,0,0,1); }
-    .message { margin-top: 10px; color: green; }
-    /* 查询结果卡片样式 */
-    .profile-card {
-      border: 1px solid #ccc; padding: 15px; margin: 15px 0; text-align: center; border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    /* 信息卡片样式 */
+    .info-list { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; }
+    .info-card {
+      position: relative;
+      border: 1px solid #ccc; padding: 15px; border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); background: #fafafa;
     }
-    .profile-photo {
-      width: 100px; height: 100px; object-fit: cover; border-radius: 50%; display: block; margin: 0 auto 10px;
+    .info-card img {
+      width: 80px; height: 80px; object-fit: cover; border-radius: 50%;
+      float: right; margin-left: 15px;
     }
-    .info p { margin: 5px 0; color: #333; }
+    .info-card p { margin: 4px 0; color: #333; }
+    .card-buttons { margin-top: 10px; }
+    .card-buttons button { padding: 6px 12px; font-size: 14px; }
+    /* 编辑弹窗样式 */
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
+    }
+    .modal-content {
+      background: #fff; padding: 20px; border-radius: 8px; width: 320px; position: relative;
+    }
+    .modal-content h3 { margin-top: 0; }
+    .modal-content input { width: 100%; margin-bottom: 10px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+    .modal-content .close-btn {
+      position: absolute; top: 10px; right: 10px; background: #eee; border: none;
+      width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+    }
+    .modal-content .close-btn:hover { background: #ccc; }
   </style>
 </head>
 <body>
@@ -60,13 +79,27 @@
     <div class="album-list" id="album-list"></div>
   </div>
 
-  <!-- 3. 信息查询管理（交互式 UI） -->
+  <!-- 3. 信息管理（UI 交互编辑 data/info.txt） -->
   <div class="section" id="info-section" style="display:none;">
-    <h2>信息查询管理</h2>
-    <label>姓名查询（完全匹配）：</label>
-    <input type="text" id="search-input" placeholder="请输入姓名">
-    <button id="btn-search">查询</button>
-    <div id="search-result" style="margin-top:15px;"></div>
+    <h2>信息管理</h2>
+    <button id="btn-add-info">新增信息</button>
+    <div id="info-list" class="info-list"></div>
+  </div>
+
+  <!-- 编辑/新增 弹窗 -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" id="modal-close">×</button>
+      <h3 id="modal-title">编辑信息</h3>
+      <input type="text" id="field-name" placeholder="姓名" />
+      <input type="text" id="field-class" placeholder="班级" />
+      <input type="text" id="field-phone" placeholder="电话" />
+      <input type="text" id="field-qq" placeholder="QQ" />
+      <input type="text" id="field-weixin" placeholder="微信" />
+      <label>照片：</label>
+      <input type="file" id="field-photo" accept="image/*" />
+      <button id="modal-save">保存</button>
+    </div>
   </div>
 
   <!-- 4. 寻求帮助管理 -->
@@ -81,27 +114,26 @@
   <!-- 引入 CryptoJS -->
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
   <script>
-    // ==== 本地加密存储脚本 ====
+    // —— 本地加密存储脚本 —— 
     const STORAGE_KEY = 'student_data_enc';
     function loadData() {
       const enc = localStorage.getItem(STORAGE_KEY);
       if (!enc) return [];
-      const pwd = 'fixed_global_password'; // 默认全局密码，可自行修改
+      const pwd = 'fixed_global_password';
       const bytes = CryptoJS.AES.decrypt(enc, pwd);
       const json  = bytes.toString(CryptoJS.enc.Utf8);
       return JSON.parse(json || '[]');
     }
     function saveData(arr) {
       const pwd = 'fixed_global_password';
-      const json = JSON.stringify(arr);
-      const enc  = CryptoJS.AES.encrypt(json, pwd).toString();
+      const enc = CryptoJS.AES.encrypt(JSON.stringify(arr), pwd).toString();
       localStorage.setItem(STORAGE_KEY, enc);
     }
-    // ===========================
+    // ——————————————
 
-    let repoOwner, repoName, authToken, imagesSHA, helpSHA;
+    let repoOwner, repoName, authToken, imagesSHA, helpSHA, infoSHA, modalState;
 
-    // 初始化：加载相册 & 帮助文本
+    // 初始化：加载相册、帮助、信息列表
     document.getElementById('btn-init').addEventListener('click', async () => {
       repoOwner = document.getElementById('gh-username').value.trim();
       const repoFull = document.getElementById('gh-repo').value.trim();
@@ -118,8 +150,7 @@
       repoName = parts[1];
       document.getElementById('init-msg').textContent = '初始化中...';
       try {
-        await loadImagesJSON();
-        await loadHelpTXT();
+        await Promise.all([loadImagesJSON(), loadHelpTXT(), loadInfo()]);
         document.getElementById('album-section').style.display = 'block';
         document.getElementById('info-section').style.display = 'block';
         document.getElementById('help-section').style.display = 'block';
@@ -130,14 +161,13 @@
       }
     });
 
-    // ---- GitHub 文件操作函数（保持不变） ----
+    // — GitHub 通用文件操作 — 
     async function getFile(path) {
       const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`;
       const resp = await fetch(url, { headers: { Authorization: `token ${authToken}` } });
       if (!resp.ok) throw new Error(`获取 ${path} 失败：${resp.status}`);
       return await resp.json();
     }
-
     async function putFile(path, contentBase64, sha, message) {
       const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`;
       const body = { message, content: contentBase64, sha };
@@ -149,8 +179,9 @@
       if (!resp.ok) throw new Error(`更新 ${path} 失败：${resp.status}`);
       return await resp.json();
     }
+    // ——————————————————————
 
-    // 加载 & 渲染 images.json
+    // —— 回忆相册管理 —— 
     async function loadImagesJSON() {
       const data = await getFile('data/images.json');
       const arr = JSON.parse(atob(data.content));
@@ -160,20 +191,19 @@
       arr.forEach(src => {
         const div = document.createElement('div');
         div.className = 'album-item';
-        div.innerHTML = `<img src="https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${src}" />
-                         <button class="delete-btn">×</button>`;
+        div.innerHTML = `
+          <img src="https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${src}" />
+          <button class="delete-btn">&times;</button>`;
         div.querySelector('.delete-btn').onclick = async () => {
-          const idx = arr.indexOf(src);
-          arr.splice(idx, 1);
-          await putFile('data/images.json', btoa(JSON.stringify(arr)), imagesSHA, '删除图片');
-          imagesSHA = (await getFile('data/images.json')).sha;
+          arr.splice(arr.indexOf(src), 1);
+          const newContent = btoa(JSON.stringify(arr));
+          const res = await putFile('data/images.json', newContent, imagesSHA, '删除图片');
+          imagesSHA = res.content.sha;
           loadImagesJSON();
         };
         list.appendChild(div);
       });
     }
-
-    // 上传新照片
     document.getElementById('btn-upload-photo').addEventListener('click', () => {
       const file = document.getElementById('album-upload').files[0];
       if (!file) return alert('请选择图片');
@@ -187,57 +217,140 @@
           body: JSON.stringify({ message: `上传 ${file.name}`, content: base64Data })
         });
         document.getElementById('upload-msg').textContent = '上传成功';
-        await loadImagesJSON();
+        loadImagesJSON();
       };
       reader.readAsDataURL(file);
     });
+    // ——————————————————
 
-    // 加载 & 渲染 help.txt
+    // —— 帮助管理 —— 
     async function loadHelpTXT() {
       const data = await getFile('data/help.txt');
-      const content = atob(data.content).trim();
       helpSHA = data.sha;
-      document.getElementById('help-input').value = content;
+      document.getElementById('help-input').value = atob(data.content).trim();
     }
     document.getElementById('btn-save-help').addEventListener('click', async () => {
       const newLink = document.getElementById('help-input').value.trim();
-      const updatedContent = btoa(newLink);
-      await putFile('data/help.txt', updatedContent, helpSHA, '更新 help.txt');
+      const contentBase64 = btoa(newLink);
+      const res = await putFile('data/help.txt', contentBase64, helpSHA, '更新 help.txt');
+      helpSHA = res.content.sha;
       document.getElementById('save-help-msg').textContent = '保存成功';
     });
+    // ——————————————————
 
-    // ---- 新增：信息查询管理交互 ----
-    document.getElementById('btn-search').addEventListener('click', () => {
-      const key = document.getElementById('search-input').value.trim();
-      const resultEl = document.getElementById('search-result');
-      resultEl.innerHTML = '';
-      if (!key) {
-        resultEl.innerHTML = '<p style="color:#c0392b">请输入姓名进行查询。</p>';
-        return;
-      }
-      const arr = loadData();
-      const matched = arr.filter(x => x.name === key);
-      if (matched.length === 0) {
-        resultEl.innerHTML = '<p style="color:#c0392b">未找到匹配的记录。</p>';
-        return;
-      }
-      matched.forEach(x => {
+    // —— 信息管理 —— 
+    async function loadInfo() {
+      const data = await getFile('data/info.txt');
+      infoSHA = data.sha;
+      const arr = JSON.parse(atob(data.content) || '[]');
+      renderInfoList(arr);
+    }
+
+    function renderInfoList(arr) {
+      const container = document.getElementById('info-list');
+      container.innerHTML = '';
+      arr.forEach((x, idx) => {
         const card = document.createElement('div');
-        card.className = 'profile-card';
+        card.className = 'info-card';
         card.innerHTML = `
-          <img src="${x.photo}" class="profile-photo">
-          <div class="info">
-            <p><strong>姓名：</strong>${x.name}</p>
-            <p><strong>班级：</strong>${x.cls}</p>
-            <p><strong>手机号：</strong>${x.phone}</p>
-            <p><strong>微信：</strong>${x.wx}</p>
-            <p><strong>QQ：</strong>${x.qq}</p>
+          <img src="${x.photo}" alt="头像" />
+          <p><strong>姓名：</strong>${x.name}</p>
+          <p><strong>班级：</strong>${x.cls}</p>
+          <p><strong>电话：</strong>${x.phone}</p>
+          <p><strong>QQ：</strong>${x.qq}</p>
+          <p><strong>微信：</strong>${x.wx}</p>
+          <div class="card-buttons">
+            <button data-idx="${idx}" class="btn-edit">编辑</button>
+            <button data-idx="${idx}" class="btn-delete">删除</button>
           </div>`;
-        resultEl.appendChild(card);
+        container.appendChild(card);
       });
-    });
-    // =================================
+      // 绑定事件
+      document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.onclick = () => openModal('edit', parseInt(btn.dataset.idx), arr);
+      });
+      document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.onclick = () => deleteInfo(parseInt(btn.dataset.idx), arr);
+      });
+    }
 
+    function openModal(type, idx, arr) {
+      document.getElementById('modal-title').innerText = type === 'add' ? '新增信息' : '编辑信息';
+      if (type === 'edit') {
+        const x = arr[idx];
+        document.getElementById('field-name').value   = x.name;
+        document.getElementById('field-class').value  = x.cls;
+        document.getElementById('field-phone').value  = x.phone;
+        document.getElementById('field-qq').value     = x.qq;
+        document.getElementById('field-weixin').value = x.wx;
+      } else {
+        ['name','class','phone','qq','weixin'].forEach(f => {
+          document.getElementById(`field-${f}`).value = '';
+        });
+      }
+      document.getElementById('field-photo').value = '';
+      modalState = { type, idx, arr };
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    document.getElementById('modal-close').onclick = () => {
+      document.getElementById('modal').style.display = 'none';
+    };
+
+    document.getElementById('btn-add-info').onclick = () => {
+      openModal('add', null, loadData());
+    };
+
+    document.getElementById('modal-save').onclick = () => {
+      const name  = document.getElementById('field-name').value.trim();
+      const cls   = document.getElementById('field-class').value.trim();
+      const phone = document.getElementById('field-phone').value.trim();
+      const qq    = document.getElementById('field-qq').value.trim();
+      const wx    = document.getElementById('field-weixin').value.trim();
+      const file  = document.getElementById('field-photo').files[0];
+      if (!name || !cls || !phone || !qq || !wx) {
+        return alert('请填写所有字段');
+      }
+      const process = (readerResult) => {
+        const arr = modalState.arr;
+        const obj = {
+          name, cls, phone, qq, wx,
+          photo: readerResult || arr[modalState.idx]?.photo
+        };
+        if (modalState.type === 'add') arr.push(obj);
+        else arr[modalState.idx] = obj;
+        // 写回 GitHub
+        const contentBase64 = btoa(JSON.stringify(arr));
+        putFile('data/info.txt', contentBase64, infoSHA,
+                modalState.type === 'add' ? '新增信息' : '编辑信息')
+          .then(res => {
+            infoSHA = res.content.sha;
+            renderInfoList(arr);
+            document.getElementById('modal').style.display = 'none';
+          })
+          .catch(err => console.error(err));
+      };
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => process(reader.result);
+        reader.readAsDataURL(file);
+      } else {
+        process(null);
+      }
+    };
+
+    function deleteInfo(idx, arr) {
+      if (!confirm('确定删除此条信息？')) return;
+      arr.splice(idx, 1);
+      const contentBase64 = btoa(JSON.stringify(arr));
+      putFile('data/info.txt', contentBase64, infoSHA, '删除信息')
+        .then(res => {
+          infoSHA = res.content.sha;
+          renderInfoList(arr);
+        })
+        .catch(err => console.error(err));
+    }
+    // ——————————————————————
   </script>
 </body>
 </html>
