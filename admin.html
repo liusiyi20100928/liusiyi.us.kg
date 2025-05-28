@@ -1,566 +1,271 @@
-/*==========================================
-  全局状态 & DOM 引用
-==========================================*/
-let repoOwner = "";
-let repoName = "";
-let authToken = "";
-let backendPass = "";
-let localToken = "";
-
-// 存放 info.json 数据
-let infoData = [];
-let infoSHA = "";
-
-// 存放 images.json 数据
-let imagesData = [];
-let imagesSHA = "";
-
-// 存放 help.txt SHA
-let helpSHA = "";
-
-/*----------------------------------------
-  DOM 元素
-----------------------------------------*/
-const loginSection    = document.getElementById("login-section");
-const manageSection   = document.getElementById("manage-section");
-const errorDiv        = document.getElementById("error");
-const infoMessage     = document.getElementById("info-message");
-
-const ghUserInput     = document.getElementById("gh-username");
-const ghRepoInput     = document.getElementById("gh-repo");
-const ghTokenInput    = document.getElementById("gh-token");
-const setPassInput    = document.getElementById("set-pass");
-const btnLogin        = document.getElementById("btn-login");
-const btnLogout       = document.getElementById("btn-logout");
-
-const btnManageAlbum  = document.getElementById("btn-manage-album");
-const btnManageInfo   = document.getElementById("btn-manage-info");
-const btnManageHelp   = document.getElementById("btn-manage-help");
-
-const albumSection    = document.getElementById("album-manage-section");
-const infoSection     = document.getElementById("info-manage-section");
-const helpSection     = document.getElementById("help-manage-section");
-
-const searchInput     = document.getElementById("search-input");
-const albumListDiv    = document.getElementById("album-list");
-const albumNameInput  = document.getElementById("album-name");
-const albumUploadInput= document.getElementById("album-upload");
-const btnUploadAlbum  = document.getElementById("btn-upload-album");
-const albumMsgDiv     = document.getElementById("album-msg");
-
-const infoTableBody   = document.querySelector("#info-table tbody");
-const btnAddInfo      = document.getElementById("btn-add-info");
-const messageDiv      = document.getElementById("message");
-
-const helpInput       = document.getElementById("help-input");
-const btnSaveHelp     = document.getElementById("btn-save-help");
-const saveHelpMsg     = document.getElementById("save-help-msg");
-
-// 弹窗（添加/编辑信息）
-const overlay         = document.getElementById("popup-overlay");
-const popupTitle      = document.getElementById("popup-title");
-const inpId           = document.getElementById("inp-id");
-const inpName         = document.getElementById("inp-name");
-const inpClass        = document.getElementById("inp-class");
-const inpPhone        = document.getElementById("inp-phone");
-const inpQQ           = document.getElementById("inp-qq");
-const inpWechat       = document.getElementById("inp-wechat");
-const inpPhoto        = document.getElementById("inp-photo");
-const photoPreview    = document.getElementById("photo-preview");
-const btnSaveInfo     = document.getElementById("btn-save-info");
-const btnCancelInfo   = document.getElementById("btn-cancel-info");
-
-let editInfoIndex = -1;     // -1 = 添加；>=0 = 编辑
-let uploadedPhotoData = ""; // Base64 存储
-
-/*==========================================
-  本地存储：密码 + 令牌
-==========================================*/
-function saveCredentials(token, password) {
-  localStorage.setItem("memoryManual_token", token);
-  localStorage.setItem("memoryManual_pass", password);
-}
-function loadCredentials() {
-  localToken    = localStorage.getItem("memoryManual_token") || "";
-  backendPass   = localStorage.getItem("memoryManual_pass")  || "";
-}
-
-/*==========================================
-  GitHub Contents API 操作
-==========================================*/
-async function getFile(path) {
-  const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`;
-  const resp = await fetch(url, {
-    headers: { Authorization: `token ${authToken}` }
-  });
-  if (!resp.ok) throw new Error(`无法获取 ${path} (${resp.status})`);
-  return resp.json();
-}
-
-async function putFile(path, contentBase64, sha, message) {
-  const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`;
-  const body = { message, content: contentBase64, sha };
-  const resp = await fetch(url, {
-    method: "PUT",
-    headers: {
-      Authorization: `token ${authToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body)
-  });
-  if (!resp.ok) throw new Error(`无法更新 ${path} (${resp.status})`);
-  return resp.json();
-}
-
-async function deleteFile(path, sha, message) {
-  const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`;
-  const resp = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      Authorization: `token ${authToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ message, sha })
-  });
-  if (!resp.ok) throw new Error(`无法删除 ${path} (${resp.status})`);
-  return resp.json();
-}
-
-/*==========================================
-  初始化：检查 localStorage
-==========================================*/
-document.addEventListener("DOMContentLoaded", () => {
-  loadCredentials();
-  if (backendPass && localToken) {
-    showManage(); // 已经保存了凭据
-  }
-});
-
-/*==========================================
-  登录逻辑：首次输入 GitHub 凭据 + 设置密码
-==========================================*/
-btnLogin.addEventListener("click", async () => {
-  errorDiv.textContent = "";
-  const user = ghUserInput.value.trim();
-  const repo = ghRepoInput.value.trim();
-  const token= ghTokenInput.value.trim();
-  const pass = setPassInput.value.trim();
-
-  if (!user || !repo || !token || !pass) {
-    errorDiv.textContent = "请完整填写用户名/仓库/令牌/密码。";
-    return;
-  }
-  if (pass.length < 6) {
-    errorDiv.textContent = "密码至少 6 位。";
-    return;
-  }
-
-  repoOwner = user;
-  repoName  = repo.split("/")[1];
-  authToken = token;
-
-  try {
-    // 先测试能否读取 info.json
-    await getFile("data/info.json");
-    saveCredentials(token, pass);
-    showManage();
-  } catch (err) {
-    console.error(err);
-    errorDiv.textContent = "GitHub 验证失败，请检查用户名/仓库/令牌。";
-  }
-});
-
-/*==========================================
-  登出逻辑
-==========================================*/
-btnLogout.addEventListener("click", () => {
-  localStorage.removeItem("memoryManual_token");
-  localStorage.removeItem("memoryManual_pass");
-  location.reload();
-});
-
-/*==========================================
-  显示后台管理区
-==========================================*/
-function showManage() {
-  loginSection.style.display = "none";
-  manageSection.style.display = "block";
-  authToken = localToken;
-  repoOwner = ghUserInput.value.trim();
-  repoName  = ghRepoInput.value.trim().split("/")[1];
-  loadAllSections();
-}
-
-/*==========================================
-  加载所有子功能区数据
-==========================================*/
-async function loadAllSections() {
-  await loadImagesJSON();
-  await loadInfoJSON();
-  await loadHelpTXT();
-
-  renderAlbumList(imagesData);
-  renderInfoTable(infoData);
-}
-
-/*==========================================
-  回忆相册管理：读写 images.json → 渲染
-==========================================*/
-async function loadImagesJSON() {
-  try {
-    const data = await getFile("data/images.json");
-    imagesSHA  = data.sha;
-    imagesData = JSON.parse(atob(data.content));
-  } catch (err) {
-    console.warn("无法加载 images.json，初始化为空；", err);
-    imagesData = [];
-    imagesSHA  = "";
-  }
-}
-function renderAlbumList(arr) {
-  albumListDiv.innerHTML = "";
-  arr.forEach((item, idx) => {
-    const div = document.createElement("div");
-    div.className = "album-item";
-    div.innerHTML = `
-      <img src="../${item.path}" alt="${item.name}" />
-      <span>${item.name}</span>
-      <button class="delete-btn" onclick="deleteAlbum(${idx})">×</button>
-    `;
-    albumListDiv.appendChild(div);
-  });
-}
-
-// 上传新的相册图片
-btnUploadAlbum.addEventListener("click", () => {
-  const nameVal = albumNameInput.value.trim();
-  const file    = albumUploadInput.files[0];
-  if (!nameVal || !file) {
-    albumMsgDiv.textContent = "请填写名称并选择图片。";
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = async () => {
-    try {
-      const base64Data = reader.result.split(",")[1];
-      const filename   = `huiyi_${Date.now()}.jpg`;
-      const newPath    = `image/${filename}`;
-      // 上传图片到仓库
-      await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${newPath}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `token ${authToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: `上传相册图片 ${filename}`,
-          content: base64Data
-        })
-      });
-      // 更新 images.json
-      const data = await getFile("data/images.json");
-      imagesData = JSON.parse(atob(data.content));
-      imagesData.push({ name: nameVal, path: newPath });
-      imagesSHA = data.sha;
-      const updated = btoa(JSON.stringify(imagesData, null, 2));
-      await putFile("data/images.json", updated, imagesSHA, "更新 images.json，添加相册");
-      renderAlbumList(imagesData);
-      albumMsgDiv.textContent = "上传成功！";
-      albumNameInput.value = "";
-      albumUploadInput.value = "";
-    } catch (err) {
-      console.error(err);
-      albumMsgDiv.textContent = "上传失败，请检查控制台。";
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>后台管理 - 九年级回忆手册</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ===== 后台表格、按钮和弹窗的额外样式 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
     }
-  };
-  reader.readAsDataURL(file);
-});
-
-// 删除相册图片
-async function deleteAlbum(idx) {
-  if (!confirm("确认删除该回忆相册？")) return;
-  try {
-    const item = imagesData[idx];
-    // 先获取图片 SHA 用于删除
-    const imgData = await getFile(item.path);
-    await deleteFile(item.path, imgData.sha, `删除相册图片 ${item.path}`);
-    // 更新 images.json
-    const data = await getFile("data/images.json");
-    imagesData = JSON.parse(atob(data.content));
-    imagesData.splice(idx, 1);
-    imagesSHA = data.sha;
-    const updated = btoa(JSON.stringify(imagesData, null, 2));
-    await putFile("data/images.json", updated, imagesSHA, "更新 images.json，删除相册");
-    renderAlbumList(imagesData);
-    albumMsgDiv.textContent = "删除成功！";
-  } catch (err) {
-    console.error(err);
-    albumMsgDiv.textContent = "删除失败，请检查控制台。";
-  }
-}
-
-/*==========================================
-  信息查询管理：读写 info.json → 渲染
-==========================================*/
-async function loadInfoJSON() {
-  try {
-    const data = await getFile("data/info.json");
-    infoSHA  = data.sha;
-    infoData = JSON.parse(atob(data.content));
-  } catch (err) {
-    console.warn("无法加载 info.json，初始化为空；", err);
-    infoData = [];
-    infoSHA  = "";
-  }
-}
-function renderInfoTable(arr) {
-  infoTableBody.innerHTML = "";
-  arr.forEach((item, idx) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><img src="../${item.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:4px;" /></td>
-      <td>${item.id}</td>
-      <td>${item.name}</td>
-      <td>${item.class}</td>
-      <td>${item.phone}</td>
-      <td>${item.qq}</td>
-      <td>${item.wechat}</td>
-      <td>
-        <button class="action-btn" onclick="openEdit(${idx})">编辑</button>
-        <button class="action-btn" style="background-color:#e74c3c;" onclick="deleteInfo(${idx})">删除</button>
-      </td>`;
-    infoTableBody.appendChild(tr);
-  });
-}
-
-// 搜索功能（按 姓名 或 编号 精确匹配）
-searchInput.addEventListener("keypress", function(e) {
-  if (e.key === "Enter") {
-    const keyword = searchInput.value.trim();
-    if (!keyword) {
-      renderInfoTable(infoData);
-      return;
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: center;
     }
-    const filtered = infoData.filter(item =>
-      item.name === keyword || item.id === keyword
-    );
-    renderInfoTable(filtered);
-  }
-});
-
-/*------------------------------------------
-  弹窗：添加 / 编辑 信息
-------------------------------------------*/
-btnAddInfo.addEventListener("click", () => {
-  editInfoIndex = -1;
-  popupTitle.textContent = "添加信息";
-  clearPopupInputs();
-  overlay.style.display = "flex";
-});
-btnCancelInfo.addEventListener("click", () => {
-  overlay.style.display = "none";
-});
-
-// 预览上传的照片 (Base64)
-inpPhoto.addEventListener("change", () => {
-  const file = inpPhoto.files[0];
-  if (!file) {
-    photoPreview.style.display = "none";
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = () => {
-    uploadedPhotoData = reader.result.split(",")[1];
-    photoPreview.src = reader.result;
-    photoPreview.style.display = "block";
-  };
-  reader.readAsDataURL(file);
-});
-
-// 打开编辑弹窗
-function openEdit(idx) {
-  const item = infoData[idx];
-  editInfoIndex = idx;
-  popupTitle.textContent = "编辑信息";
-  inpId.value      = item.id;
-  inpName.value    = item.name;
-  inpClass.value   = item.class;
-  inpPhone.value   = item.phone;
-  inpQQ.value      = item.qq;
-  inpWechat.value  = item.wechat;
-  photoPreview.src = item.photo;
-  photoPreview.style.display = "block";
-  uploadedPhotoData = "";
-  overlay.style.display = "flex";
-}
-
-// 保存 信息 (添加 / 编辑) 到 GitHub
-btnSaveInfo.addEventListener("click", async () => {
-  const idVal     = inpId.value.trim();
-  const nameVal   = inpName.value.trim();
-  const classVal  = inpClass.value.trim();
-  const phoneVal  = inpPhone.value.trim();
-  const qqVal     = inpQQ.value.trim();
-  const wechatVal = inpWechat.value.trim();
-
-  if (!idVal || !nameVal || !classVal || !phoneVal || !qqVal || !wechatVal) {
-    infoMessage.textContent = "请填写所有字段。";
-    return;
-  }
-
-  try {
-    let photoPath = "";
-    // 上传新照片
-    if (uploadedPhotoData) {
-      const filename = `student_${Date.now()}.jpg`;
-      const newPath = `image/${filename}`;
-      await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${newPath}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `token ${authToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: `上传学生照片 ${filename}`,
-          content: uploadedPhotoData
-        })
-      });
-      photoPath = newPath;
+    th {
+      background-color: #ff99aa;
+      color: white;
+    }
+    .action-btn {
+      background-color: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .action-btn:hover {
+      background-color: #ff4f8b;
     }
 
-    if (editInfoIndex >= 0) {
-      // 编辑
-      const oldItem = infoData[editInfoIndex];
-      photoPath = photoPath || oldItem.photo;
-      infoData[editInfoIndex] = {
-        id: idVal,
-        name: nameVal,
-        class: classVal,
-        phone: phoneVal,
-        qq: qqVal,
-        wechat: wechatVal,
-        photo: photoPath
-      };
-    } else {
-      // 添加
-      photoPath = photoPath || "image/sample.jpg";
-      infoData.push({
-        id: idVal,
-        name: nameVal,
-        class: classVal,
-        phone: phoneVal,
-        qq: qqVal,
-        wechat: wechatVal,
-        photo: photoPath
-      });
+    /* 登录区与管理区公共容器样式 */
+    #login-section, #manage-section {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff0f8;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    #manage-section {
+      display: none;
+    }
+    #login-section h2, #manage-section h2 {
+      color: #c0392b;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin: 8px 0 4px;
+      font-size: 14px;
+    }
+    input[type=text], input[type=password] {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    #error, #info-message, #album-msg, #save-help-msg {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #error {
+      color: red;
+    }
+    #info-message, #album-msg, #save-help-msg {
+      color: green;
     }
 
-    // 更新 data/info.json
-    const updatedJSON = btoa(JSON.stringify(infoData, null, 2));
-    await putFile("data/info.json", updatedJSON, infoSHA, "更新 info.json");
-    // 重新获取 SHA & 数据
-    const newData = await getFile("data/info.json");
-    infoSHA  = newData.sha;
-    infoData = JSON.parse(atob(newData.content));
-    renderInfoTable(infoData);
-    infoMessage.textContent = "保存成功！";
-    overlay.style.display = "none";
-  } catch (err) {
-    console.error(err);
-    infoMessage.textContent = "保存失败，请检查控制台。";
-  }
-});
+    /* 弹窗样式 */
+    .overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    .popup {
+      background: #fff0f8;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+    }
+    .popup h3 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #d6336c;
+    }
+    .popup input {
+      width: 100%;
+      padding: 6px;
+      margin: 6px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .popup button {
+      margin-top: 10px;
+      width: 100%;
+      background-color: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .popup button:hover {
+      background-color: #ff4f8b;
+    }
 
-// 删除 信息
-async function deleteInfo(idx) {
-  if (!confirm("确认删除此条信息？")) return;
-  try {
-    infoData.splice(idx, 1);
-    const updatedJSON = btoa(JSON.stringify(infoData, null, 2));
-    await putFile("data/info.json", updatedJSON, infoSHA, "更新 info.json，删除记录");
-    const newData = await getFile("data/info.json");
-    infoSHA  = newData.sha;
-    infoData = JSON.parse(atob(newData.content));
-    renderInfoTable(infoData);
-    infoMessage.textContent = "删除成功！";
-  } catch (err) {
-    console.error(err);
-    infoMessage.textContent = "删除失败，请检查控制台。";
-  }
-}
+    /* 隐藏类 */
+    .hidden {
+      display: none;
+    }
 
-// 清空弹窗输入
-function clearPopupInputs() {
-  inpId.value      = "";
-  inpName.value    = "";
-  inpClass.value   = "";
-  inpPhone.value   = "";
-  inpQQ.value      = "";
-  inpWechat.value  = "";
-  inpPhoto.value   = "";
-  photoPreview.style.display = "none";
-  uploadedPhotoData = "";
-}
+    /* 回忆相册列表样式 */
+    .album-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .album-item {
+      position: relative;
+      width: 120px;
+      text-align: center;
+    }
+    .album-item img {
+      width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .album-item span {
+      display: block;
+      margin-top: 6px;
+      font-size: 14px;
+      color: #333;
+    }
+    .album-item .delete-btn {
+      position: absolute;
+      top: 4px; right: 4px;
+      background: rgba(255,0,0,0.8);
+      border: none;
+      border-radius: 50%;
+      width: 20px; height: 20px;
+      color: white;
+      font-size: 14px;
+      line-height: 18px;
+      cursor: pointer;
+    }
+    .album-item .delete-btn:hover {
+      background: rgba(255,0,0,1);
+    }
 
-/*==========================================
-  帮助链接 管理 (data/help.txt)
-==========================================*/
-async function loadHelpTXT() {
-  try {
-    const data = await getFile("data/help.txt");
-    helpSHA = data.sha;
-    const content = atob(data.content).trim();
-    helpInput.value = content;
-  } catch {
-    helpInput.value = "";
-    helpSHA = "";
-  }
-}
+    /* 管理区子面板切换 */
+    .manage-section {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 登录区 -->
+  <div id="login-section">
+    <h2>后台登录</h2>
+    <label>GitHub 用户名：</label>
+    <input type="text" id="gh-username" placeholder="例如 yourusername" />
+    <label>仓库 (用户名/仓库名)：</label>
+    <input type="text" id="gh-repo" placeholder="例如 yourusername/your-repo" />
+    <label>个人访问令牌 (PAT)：</label>
+    <input type="password" id="gh-token" placeholder="在此粘贴你的 GitHub PAT" />
+    <label>设置后台密码 (首次登录)：</label>
+    <input type="password" id="set-pass" placeholder="请输入 6-20 位密码" />
+    <button id="btn-login" class="action-btn">登录</button>
+    <div id="error"></div>
+  </div>
 
-btnSaveHelp.addEventListener("click", async () => {
-  const newLink = helpInput.value.trim();
-  if (!newLink) {
-    saveHelpMsg.textContent = "链接不能为空。";
-    return;
-  }
-  try {
-    const updated = btoa(newLink);
-    await putFile("data/help.txt", updated, helpSHA, "更新 help.txt");
-    const data = await getFile("data/help.txt");
-    helpSHA = data.sha;
-    saveHelpMsg.textContent = "保存成功！";
-  } catch (err) {
-    console.error(err);
-    saveHelpMsg.textContent = "保存失败，请检查控制台。";
-  }
-});
+  <!-- 管理区 -->
+  <div id="manage-section">
+    <h2>后台管理 · 九年级回忆手册</h2>
+    <button id="btn-logout" class="action-btn" style="float:right; margin-bottom:10px;">登出</button>
+    <div style="clear:both;"></div>
 
-/*==========================================
-  切换 管理子面板 逻辑
-==========================================*/
-btnManageAlbum.addEventListener("click", () => {
-  albumSection.classList.remove("hidden");
-  infoSection.classList.add("hidden");
-  helpSection.classList.add("hidden");
-});
-btnManageInfo.addEventListener("click", () => {
-  albumSection.classList.add("hidden");
-  infoSection.classList.remove("hidden");
-  helpSection.classList.add("hidden");
-});
-btnManageHelp.addEventListener("click", () => {
-  albumSection.classList.add("hidden");
-  infoSection.classList.add("hidden");
-  helpSection.classList.remove("hidden");
-});
+    <!-- 切换管理子面板按钮 -->
+    <button id="btn-manage-album" class="action-btn">回忆相册管理</button>
+    <button id="btn-manage-info"  class="action-btn">信息查询管理</button>
+    <button id="btn-manage-help"  class="action-btn">寻求帮助管理</button>
 
-/*==========================================
-  页面首次加载：加载所有数据
-==========================================*/
-async function loadAllSections() {
-  await loadImagesJSON();
-  await loadInfoJSON();
-  await loadHelpTXT();
-  renderAlbumList(imagesData);
-  renderInfoTable(infoData);
-}
+    <!-- —— 回忆相册 管理 区 —— -->
+    <div id="album-manage-section" class="manage-section">
+      <h3>回忆相册管理</h3>
+      <label>上传新相册图片 (含名称)：</label>
+      <input type="text" id="album-name" placeholder="图片名称" />
+      <input type="file" id="album-upload" accept="image/*" />
+      <button id="btn-upload-album" class="action-btn">上传</button>
+      <div id="album-msg"></div>
+
+      <h4>当前相册列表：</h4>
+      <div class="album-list" id="album-list"></div>
+    </div>
+
+    <!-- —— 信息 查询 管理 区 —— -->
+    <div id="info-manage-section" class="manage-section hidden">
+      <h3>信息查询管理</h3>
+      <label>搜索 (姓名 或 编号)：</label>
+      <input type="text" id="search-input" placeholder="输入姓名或编号后回车" />
+
+      <button id="btn-add-info" class="action-btn">➕ 添加新信息</button>
+      <table id="info-table">
+        <thead>
+          <tr>
+            <th>照片</th>
+            <th>编号</th>
+            <th>姓名</th>
+            <th>班级</th>
+            <th>电话</th>
+            <th>QQ</th>
+            <th>微信</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 动态生成数据行 -->
+        </tbody>
+      </table>
+      <div id="message"></div>
+    </div>
+
+    <!-- —— 帮助 链接 管理 区 —— -->
+    <div id="help-manage-section" class="manage-section hidden">
+      <h3>寻求帮助管理</h3>
+      <label>编辑 data/help.txt (QQ群 链接)：</label>
+      <input type="text" id="help-input" placeholder="https://jq.qq.com/?_wv=1027&k=示例" />
+      <button id="btn-save-help" class="action-btn">保存链接</button>
+      <div id="save-help-msg"></div>
+    </div>
+
+    <!-- 全局提示 -->
+    <div id="info-message"></div>
+  </div>
+
+  <!-- 添加/编辑 信息 弹窗 -->
+  <div class="overlay" id="popup-overlay">
+    <div class="popup">
+      <h3 id="popup-title">添加信息</h3>
+      <input type="text" id="inp-id"      placeholder="编号 (唯一)" />
+      <input type="text" id="inp-name"    placeholder="姓名" />
+      <input type="text" id="inp-class"   placeholder="班级" />
+      <input type="text" id="inp-phone"   placeholder="电话" />
+      <input type="text" id="inp-qq"      placeholder="QQ" />
+      <input type="text" id="inp-wechat"  placeholder="微信" />
+      <label>上传照片：</label>
+      <input type="file" id="inp-photo" accept="image/*" />
+      <img id="photo-preview" src="" alt="预览" style="display:none; width:100px; height:100px; object-fit:cover; margin-top:8px; border-radius:6px; border:1px solid #ccc;" />
+      <button id="btn-save-info" class="action-btn">保存</button>
+      <button id="btn-cancel-info" class="action-btn" style="background-color:#ccc; color:#333; margin-top:6px;">取消</button>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
