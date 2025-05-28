@@ -6,72 +6,243 @@
   <title>后台管理 - 九年级回忆手册</title>
   <link rel="stylesheet" href="styles.css">
   <style>
+    /* ===== 后台表格、按钮和弹窗的额外样式 ===== */
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
     th { background-color: #ff99aa; color: white; }
     .action-btn { background-color: #ff69b4; color: white; border: none; border-radius: 6px; padding: 4px 8px; cursor: pointer; }
     .action-btn:hover { background-color: #ff4f8b; }
-    #login-section, #manage-section { max-width: 600px; margin: 20px auto; background: #fff0f8; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 20px; }
+
+    /* 登录区与管理区公共容器样式 */
+    #login-section, #manage-section {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff0f8;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
     #manage-section { display: none; }
-    label { display: block; margin: 8px 0 4px; font-size: 14px; }
-    input[type=text], input[type=password] { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 10px; }
-    #message { color: green; margin-top: 10px; text-align: center; }
-    #error { color: red; margin-top: 10px; text-align: center; }
-    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 10; }
-    .popup { background: #fff0f8; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; }
-    .popup h3 { text-align: center; margin-bottom: 10px; color: #d6336c; }
-    .popup input { width: 100%; padding: 6px; margin: 6px 0; border-radius: 6px; border: 1px solid #ccc; }
-    .popup button { margin-top: 10px; width: 100%; background-color: #ff69b4; color: white; border: none; border-radius: 6px; padding: 8px; font-size: 16px; cursor: pointer; }
-    .popup button:hover { background-color: #ff4f8b; }
+
+    #login-section h2, #manage-section h2 {
+      color: #c0392b;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin: 8px 0 4px;
+      font-size: 14px;
+    }
+
+    input[type=text], input[type=password] {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    #error, #info-message, #album-msg, #save-help-msg {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #error { color: red; }
+    #info-message, #album-msg, #save-help-msg { color: green; }
+
+    /* 弹窗样式 */
+    .overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    .popup {
+      background: #fff0f8;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+    }
+    .popup h3 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #d6336c;
+    }
+    .popup input {
+      width: 100%;
+      padding: 6px;
+      margin: 6px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .popup button {
+      margin-top: 10px;
+      width: 100%;
+      background-color: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .popup button:hover {
+      background-color: #ff4f8b;
+    }
+
+    /* 隐藏类 */
+    .hidden {
+      display: none;
+    }
+
+    /* 回忆相册列表样式 */
+    .album-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .album-item {
+      position: relative;
+      width: 120px;
+      text-align: center;
+    }
+    .album-item img {
+      width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .album-item span {
+      display: block;
+      margin-top: 6px;
+      font-size: 14px;
+      color: #333;
+    }
+    .album-item .delete-btn {
+      position: absolute;
+      top: 4px; right: 4px;
+      background: rgba(255,0,0,0.8);
+      border: none;
+      border-radius: 50%;
+      width: 20px; height: 20px;
+      color: white;
+      font-size: 14px;
+      line-height: 18px;
+      cursor: pointer;
+    }
+    .album-item .delete-btn:hover {
+      background: rgba(255,0,0,1);
+    }
+
+    /* 管理区子面板切换 */
+    .manage-section {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
+  <!-- 登录区 -->
   <div id="login-section">
     <h2>后台登录</h2>
     <label>GitHub 用户名：</label>
-    <input type="text" id="gh-username" placeholder="yourusername" />
+    <input type="text" id="gh-username" placeholder="例如 yourusername" />
     <label>仓库 (用户名/仓库名)：</label>
-    <input type="text" id="gh-repo" placeholder="yourusername/your-repo" />
+    <input type="text" id="gh-repo" placeholder="例如 yourusername/your-repo" />
     <label>个人访问令牌 (PAT)：</label>
-    <input type="password" id="gh-token" placeholder="在此粘贴你的 PAT" />
-    <label>设置后台密码 (首次)：</label>
-    <input type="password" id="set-pass" placeholder="6-20 位密码" />
+    <input type="password" id="gh-token" placeholder="在此粘贴你的 GitHub PAT" />
+    <label>设置后台密码 (首次登录)：</label>
+    <input type="password" id="set-pass" placeholder="请输入 6-20 位密码" />
     <button id="btn-login" class="action-btn">登录</button>
     <div id="error"></div>
   </div>
 
+  <!-- 管理区 -->
   <div id="manage-section">
-    <h2>信息管理 · 后台</h2>
+    <h2>后台管理 · 九年级回忆手册</h2>
     <button id="btn-logout" class="action-btn" style="float:right; margin-bottom:10px;">登出</button>
     <div style="clear:both;"></div>
-    <label>搜索 (姓名 或 编号)：</label>
-    <input type="text" id="search-input" placeholder="请输入姓名或编号后回车" />
-    <button id="btn-add" class="action-btn">➕ 添加新信息</button>
-    <table id="info-table">
-      <thead>
-        <tr>
-          <th>照片</th><th>姓名</th><th>编号</th><th>班级</th><th>电话</th><th>QQ</th><th>微信</th><th>操作</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <div id="message"></div>
+
+    <!-- 切换管理子面板按钮 -->
+    <button id="btn-manage-album" class="action-btn">回忆相册管理</button>
+    <button id="btn-manage-info"  class="action-btn">信息查询管理</button>
+    <button id="btn-manage-help"  class="action-btn">寻求帮助管理</button>
+
+    <!-- —— 回忆相册 管理 区 —— -->
+    <div id="album-manage-section" class="manage-section">
+      <h3>回忆相册管理</h3>
+
+      <label>上传新相册图片 (含名称)：</label>
+      <input type="text" id="album-name" placeholder="图片名称" />
+      <input type="file" id="album-upload" accept="image/*" />
+      <button id="btn-upload-album" class="action-btn">上传</button>
+      <div id="album-msg"></div>
+
+      <h4>当前相册列表：</h4>
+      <div class="album-list" id="album-list"></div>
+    </div>
+
+    <!-- —— 信息 查询 管理 区 —— -->
+    <div id="info-manage-section" class="manage-section hidden">
+      <h3>信息查询管理</h3>
+
+      <label>搜索 (姓名 或 编号)：</label>
+      <input type="text" id="search-input" placeholder="输入姓名或编号后回车" />
+
+      <button id="btn-add-info" class="action-btn">➕ 添加新信息</button>
+      <table id="info-table">
+        <thead>
+          <tr>
+            <th>照片</th>
+            <th>编号</th>
+            <th>姓名</th>
+            <th>班级</th>
+            <th>电话</th>
+            <th>QQ</th>
+            <th>微信</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 动态生成数据行 -->
+        </tbody>
+      </table>
+      <div id="message"></div>
+    </div>
+
+    <!-- —— 帮助 链接 管理 区 —— -->
+    <div id="help-manage-section" class="manage-section hidden">
+      <h3>寻求帮助管理</h3>
+      <label>编辑 data/help.txt (QQ群 链接)：</label>
+      <input type="text" id="help-input" placeholder="https://jq.qq.com/?_wv=1027&k=示例" />
+      <button id="btn-save-help" class="action-btn">保存链接</button>
+      <div id="save-help-msg"></div>
+    </div>
+
+    <!-- 全局提示 -->
+    <div id="info-message"></div>
   </div>
 
+  <!-- 添加/编辑 信息 弹窗 -->
   <div class="overlay" id="popup-overlay">
     <div class="popup">
       <h3 id="popup-title">添加信息</h3>
-      <input type="text" id="inp-name" placeholder="姓名" />
-      <input type="text" id="inp-id" placeholder="编号" />
-      <input type="text" id="inp-class" placeholder="班级" />
-      <input type="text" id="inp-phone" placeholder="电话" />
-      <input type="text" id="inp-qq" placeholder="QQ" />
-      <input type="text" id="inp-wechat" placeholder="微信" />
+      <input type="text" id="inp-id"      placeholder="编号 (唯一)" />
+      <input type="text" id="inp-name"    placeholder="姓名" />
+      <input type="text" id="inp-class"   placeholder="班级" />
+      <input type="text" id="inp-phone"   placeholder="电话" />
+      <input type="text" id="inp-qq"      placeholder="QQ" />
+      <input type="text" id="inp-wechat"  placeholder="微信" />
       <label>上传照片：</label>
       <input type="file" id="inp-photo" accept="image/*" />
       <img id="photo-preview" src="" alt="预览" style="display:none; width:100px; height:100px; object-fit:cover; margin-top:8px; border-radius:6px; border:1px solid #ccc;" />
-      <button id="btn-save" class="action-btn">保存</button>
-      <button id="btn-cancel" class="action-btn" style="background-color:#ccc; color:#333; margin-top:6px;">取消</button>
+      <button id="btn-save-info" class="action-btn">保存</button>
+      <button id="btn-cancel-info" class="action-btn" style="background-color:#ccc; color:#333; margin-top:6px;">取消</button>
     </div>
   </div>
 
