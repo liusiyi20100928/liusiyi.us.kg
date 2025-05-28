@@ -1,21 +1,12 @@
 /*==========================================
   全局状态 & DOM 引用
 ==========================================*/
-let repoOwner = "";
-let repoName = "";
-let authToken = "";
-let backendPass = "";
-let localToken = "";
+let repoOwner = "", repoName = "", authToken = "";
+let backendPass = "", localToken = "";
 
-// 存放 info.json 数据
-let infoData = [];
-let infoSHA = "";
-
-// 存放 images.json 数据
-let imagesData = [];
-let imagesSHA = "";
-
-// 存放 help.txt SHA
+// 存储 info.json、images.json、help.txt
+let infoData = [], infoSHA = "";
+let imagesData = [], imagesSHA = "";
 let helpSHA = "";
 
 /*----------------------------------------
@@ -56,7 +47,7 @@ const helpInput       = document.getElementById("help-input");
 const btnSaveHelp     = document.getElementById("btn-save-help");
 const saveHelpMsg     = document.getElementById("save-help-msg");
 
-// 弹窗（添加/编辑信息）
+// 添加/编辑 信息 弹窗
 const overlay         = document.getElementById("popup-overlay");
 const popupTitle      = document.getElementById("popup-title");
 const inpId           = document.getElementById("inp-id");
@@ -71,10 +62,10 @@ const btnSaveInfo     = document.getElementById("btn-save-info");
 const btnCancelInfo   = document.getElementById("btn-cancel-info");
 
 let editInfoIndex = -1;     // -1 = 添加；>=0 = 编辑
-let uploadedPhotoData = ""; // Base64 存储
+let uploadedPhotoData = ""; // Base64 数据
 
 /*==========================================
-  本地存储：密码 + 令牌
+  本地存储：令牌 & 密码
 ==========================================*/
 function saveCredentials(token, password) {
   localStorage.setItem("memoryManual_token", token);
@@ -131,13 +122,11 @@ async function deleteFile(path, sha, message) {
 ==========================================*/
 document.addEventListener("DOMContentLoaded", () => {
   loadCredentials();
-  if (backendPass && localToken) {
-    showManage(); // 已经保存了凭据
-  }
+  if (backendPass && localToken) showManage();
 });
 
 /*==========================================
-  登录逻辑：首次输入 GitHub 凭据 + 设置密码
+  登录逻辑
 ==========================================*/
 btnLogin.addEventListener("click", async () => {
   errorDiv.textContent = "";
@@ -147,7 +136,7 @@ btnLogin.addEventListener("click", async () => {
   const pass = setPassInput.value.trim();
 
   if (!user || !repo || !token || !pass) {
-    errorDiv.textContent = "请完整填写用户名/仓库/令牌/密码。";
+    errorDiv.textContent = "请完整填写用户/仓库/令牌/密码。";
     return;
   }
   if (pass.length < 6) {
@@ -160,13 +149,12 @@ btnLogin.addEventListener("click", async () => {
   authToken = token;
 
   try {
-    // 先测试能否读取 info.json
-    await getFile("data/info.json");
+    await getFile("data/info.json"); // 测试能否读取
     saveCredentials(token, pass);
     showManage();
   } catch (err) {
     console.error(err);
-    errorDiv.textContent = "GitHub 验证失败，请检查用户名/仓库/令牌。";
+    errorDiv.textContent = "GitHub 验证失败，请检查信息。";
   }
 });
 
@@ -192,6 +180,25 @@ function showManage() {
 }
 
 /*==========================================
+  切换子面板
+==========================================*/
+btnManageAlbum.addEventListener("click", () => {
+  albumSection.classList.remove("hidden");
+  infoSection.classList.add("hidden");
+  helpSection.classList.add("hidden");
+});
+btnManageInfo.addEventListener("click", () => {
+  albumSection.classList.add("hidden");
+  infoSection.classList.remove("hidden");
+  helpSection.classList.add("hidden");
+});
+btnManageHelp.addEventListener("click", () => {
+  albumSection.classList.add("hidden");
+  infoSection.classList.add("hidden");
+  helpSection.classList.remove("hidden");
+});
+
+/*==========================================
   加载所有子功能区数据
 ==========================================*/
 async function loadAllSections() {
@@ -204,15 +211,14 @@ async function loadAllSections() {
 }
 
 /*==========================================
-  回忆相册管理：读写 images.json → 渲染
+  回忆相册管理
 ==========================================*/
 async function loadImagesJSON() {
   try {
     const data = await getFile("data/images.json");
     imagesSHA  = data.sha;
     imagesData = JSON.parse(atob(data.content));
-  } catch (err) {
-    console.warn("无法加载 images.json，初始化为空；", err);
+  } catch {
     imagesData = [];
     imagesSHA  = "";
   }
@@ -231,7 +237,6 @@ function renderAlbumList(arr) {
   });
 }
 
-// 上传新的相册图片
 btnUploadAlbum.addEventListener("click", () => {
   const nameVal = albumNameInput.value.trim();
   const file    = albumUploadInput.files[0];
@@ -245,7 +250,8 @@ btnUploadAlbum.addEventListener("click", () => {
       const base64Data = reader.result.split(",")[1];
       const filename   = `huiyi_${Date.now()}.jpg`;
       const newPath    = `image/${filename}`;
-      // 上传图片到仓库
+
+      // 上传图片
       await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${newPath}`, {
         method: "PUT",
         headers: {
@@ -257,6 +263,7 @@ btnUploadAlbum.addEventListener("click", () => {
           content: base64Data
         })
       });
+
       // 更新 images.json
       const data = await getFile("data/images.json");
       imagesData = JSON.parse(atob(data.content));
@@ -276,15 +283,13 @@ btnUploadAlbum.addEventListener("click", () => {
   reader.readAsDataURL(file);
 });
 
-// 删除相册图片
 async function deleteAlbum(idx) {
-  if (!confirm("确认删除该回忆相册？")) return;
+  if (!confirm("确认删除该相册？")) return;
   try {
     const item = imagesData[idx];
-    // 先获取图片 SHA 用于删除
     const imgData = await getFile(item.path);
     await deleteFile(item.path, imgData.sha, `删除相册图片 ${item.path}`);
-    // 更新 images.json
+
     const data = await getFile("data/images.json");
     imagesData = JSON.parse(atob(data.content));
     imagesData.splice(idx, 1);
@@ -300,15 +305,14 @@ async function deleteAlbum(idx) {
 }
 
 /*==========================================
-  信息查询管理：读写 info.json → 渲染
+  信息查询管理
 ==========================================*/
 async function loadInfoJSON() {
   try {
     const data = await getFile("data/info.json");
     infoSHA  = data.sha;
     infoData = JSON.parse(atob(data.content));
-  } catch (err) {
-    console.warn("无法加载 info.json，初始化为空；", err);
+  } catch {
     infoData = [];
     infoSHA  = "";
   }
@@ -333,7 +337,6 @@ function renderInfoTable(arr) {
   });
 }
 
-// 搜索功能（按 姓名 或 编号 精确匹配）
 searchInput.addEventListener("keypress", function(e) {
   if (e.key === "Enter") {
     const keyword = searchInput.value.trim();
@@ -348,9 +351,6 @@ searchInput.addEventListener("keypress", function(e) {
   }
 });
 
-/*------------------------------------------
-  弹窗：添加 / 编辑 信息
-------------------------------------------*/
 btnAddInfo.addEventListener("click", () => {
   editInfoIndex = -1;
   popupTitle.textContent = "添加信息";
@@ -361,7 +361,6 @@ btnCancelInfo.addEventListener("click", () => {
   overlay.style.display = "none";
 });
 
-// 预览上传的照片 (Base64)
 inpPhoto.addEventListener("change", () => {
   const file = inpPhoto.files[0];
   if (!file) {
@@ -377,7 +376,6 @@ inpPhoto.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
-// 打开编辑弹窗
 function openEdit(idx) {
   const item = infoData[idx];
   editInfoIndex = idx;
@@ -394,7 +392,6 @@ function openEdit(idx) {
   overlay.style.display = "flex";
 }
 
-// 保存 信息 (添加 / 编辑) 到 GitHub
 btnSaveInfo.addEventListener("click", async () => {
   const idVal     = inpId.value.trim();
   const nameVal   = inpName.value.trim();
@@ -410,7 +407,6 @@ btnSaveInfo.addEventListener("click", async () => {
 
   try {
     let photoPath = "";
-    // 上传新照片
     if (uploadedPhotoData) {
       const filename = `student_${Date.now()}.jpg`;
       const newPath = `image/${filename}`;
@@ -429,7 +425,6 @@ btnSaveInfo.addEventListener("click", async () => {
     }
 
     if (editInfoIndex >= 0) {
-      // 编辑
       const oldItem = infoData[editInfoIndex];
       photoPath = photoPath || oldItem.photo;
       infoData[editInfoIndex] = {
@@ -442,7 +437,6 @@ btnSaveInfo.addEventListener("click", async () => {
         photo: photoPath
       };
     } else {
-      // 添加
       photoPath = photoPath || "image/sample.jpg";
       infoData.push({
         id: idVal,
@@ -455,10 +449,8 @@ btnSaveInfo.addEventListener("click", async () => {
       });
     }
 
-    // 更新 data/info.json
     const updatedJSON = btoa(JSON.stringify(infoData, null, 2));
     await putFile("data/info.json", updatedJSON, infoSHA, "更新 info.json");
-    // 重新获取 SHA & 数据
     const newData = await getFile("data/info.json");
     infoSHA  = newData.sha;
     infoData = JSON.parse(atob(newData.content));
@@ -471,7 +463,6 @@ btnSaveInfo.addEventListener("click", async () => {
   }
 });
 
-// 删除 信息
 async function deleteInfo(idx) {
   if (!confirm("确认删除此条信息？")) return;
   try {
@@ -489,7 +480,6 @@ async function deleteInfo(idx) {
   }
 }
 
-// 清空弹窗输入
 function clearPopupInputs() {
   inpId.value      = "";
   inpName.value    = "";
@@ -503,14 +493,13 @@ function clearPopupInputs() {
 }
 
 /*==========================================
-  帮助链接 管理 (data/help.txt)
+  寻求帮助管理
 ==========================================*/
 async function loadHelpTXT() {
   try {
     const data = await getFile("data/help.txt");
     helpSHA = data.sha;
-    const content = atob(data.content).trim();
-    helpInput.value = content;
+    helpInput.value = atob(data.content).trim();
   } catch {
     helpInput.value = "";
     helpSHA = "";
@@ -536,26 +525,7 @@ btnSaveHelp.addEventListener("click", async () => {
 });
 
 /*==========================================
-  切换 管理子面板 逻辑
-==========================================*/
-btnManageAlbum.addEventListener("click", () => {
-  albumSection.classList.remove("hidden");
-  infoSection.classList.add("hidden");
-  helpSection.classList.add("hidden");
-});
-btnManageInfo.addEventListener("click", () => {
-  albumSection.classList.add("hidden");
-  infoSection.classList.remove("hidden");
-  helpSection.classList.add("hidden");
-});
-btnManageHelp.addEventListener("click", () => {
-  albumSection.classList.add("hidden");
-  infoSection.classList.add("hidden");
-  helpSection.classList.remove("hidden");
-});
-
-/*==========================================
-  页面首次加载：加载所有数据
+  初次加载：读取所有数据
 ==========================================*/
 async function loadAllSections() {
   await loadImagesJSON();
