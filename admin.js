@@ -557,4 +557,10 @@ btnManageHelp.addEventListener("click", () => {
 /*==========================================
   页面首次加载：加载所有数据
 ==========================================*/
-loadHelpTXT();
+async function loadAllSections() {
+  await loadImagesJSON();
+  await loadInfoJSON();
+  await loadHelpTXT();
+  renderAlbumList(imagesData);
+  renderInfoTable(infoData);
+}
