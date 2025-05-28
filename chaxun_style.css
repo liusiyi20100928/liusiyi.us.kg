@@ -1,5 +1,5 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; font-family: 'Quicksand', sans-serif; background-color: #ffe4e1;  height: auto;  min-height: 100%;  overflow-y: auto; }
+html, body { font-family: 'Quicksand', sans-serif; background-color: #ffe4e1;  height: auto;  min-height: 100%;  overflow-y: auto; }
 .nav-back { padding: 10px; background-color: #ffccd5; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .nav-back button { font-size: 16px; padding: 6px 12px; border: none; border-radius: 8px; background-color: #ff99aa; color: white; cursor: pointer; }
 .nav-back button:hover { background-color: #ff8099; }
