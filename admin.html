@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="styles.css">
   <style>
     /* —— 后台额外样式 —— */
-    /* 按钮、公用容器、表格等 */
     #login-section, #manage-section {
       max-width: 600px;
       margin: 20px auto;
@@ -177,7 +176,7 @@
     <input type="text" id="gh-repo" placeholder="例如 yourusername/your-repo" />
     <label>个人访问令牌 (PAT)：</label>
     <input type="password" id="gh-token" placeholder="在此粘贴你的 GitHub PAT" />
-    <label>设置后台密码 (首次登录)：</label>
+    <label>后台密码 (首次登录时设置)：</label>
     <input type="password" id="set-pass" placeholder="请输入 6-20 位密码" />
     <button id="btn-login" class="action-btn">登录</button>
     <div id="error"></div>
@@ -197,7 +196,7 @@
     <!-- —— 回忆相册 管理 区 —— -->
     <div id="album-manage-section" class="manage-section">
       <h3>回忆相册管理</h3>
-      <label>上传新相册图片 (含名称)：</label>
+      <label>上传新相册图片 (需填写名称)：</label>
       <input type="text" id="album-name" placeholder="图片名称" />
       <input type="file" id="album-upload" accept="image/*" />
       <button id="btn-upload-album" class="action-btn">上传</button>
@@ -210,7 +209,7 @@
     <!-- —— 信息 查询 管理 区 —— -->
     <div id="info-manage-section" class="manage-section hidden">
       <h3>信息查询管理</h3>
-      <label>搜索 (姓名 或 编号)：</label>
+      <label>搜索 (按 姓名 或 编号 精确匹配)：</label>
       <input type="text" id="search-input" placeholder="输入姓名或编号后回车" />
 
       <button id="btn-add-info" class="action-btn">➕ 添加新信息</button>
@@ -228,13 +227,13 @@
           </tr>
         </thead>
         <tbody>
-          <!-- 动态数据行 -->
+          <!-- 在此动态插入学生信息行 -->
         </tbody>
       </table>
       <div id="message"></div>
     </div>
 
-    <!-- —— 帮助 链接 管理 区 —— -->
+    <!-- —— 寻求帮助 管理 区 —— -->
     <div id="help-manage-section" class="manage-section hidden">
       <h3>寻求帮助管理</h3>
       <label>编辑 data/help.txt (QQ群 链接)：</label>
@@ -265,6 +264,7 @@
     </div>
   </div>
 
+  <!-- 一定放在 body 底部，确保 DOM 元素都已加载 -->
   <script src="admin.js"></script>
 </body>
 </html>
