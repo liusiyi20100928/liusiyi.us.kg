@@ -2,11 +2,71 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>后台管理 - 九年级回忆手册</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    /* ===== 后台表格、按钮和弹窗的额外样式 ===== */
+    /* —— 后台额外样式 —— */
+    /* 按钮、公用容器、表格等 */
+    #login-section, #manage-section {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff0f8;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    #manage-section { display: none; }
+
+    #login-section h2, #manage-section h2 {
+      color: #c0392b;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      margin: 8px 0 4px;
+      font-size: 14px;
+    }
+
+    input[type=text], input[type=password] {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .action-btn {
+      background-color: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    .action-btn:hover {
+      background-color: #ff4f8b;
+    }
+
+    #error, #info-message, #album-msg, #save-help-msg {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #error { color: red; }
+    #info-message, #album-msg, #save-help-msg { color: green; }
+
+    /* 三个子面板按钮 */
+    #btn-manage-album, #btn-manage-info, #btn-manage-help {
+      margin-top: 15px;
+    }
+
+    /* 隐藏类 */
+    .hidden { display: none; }
+
+    /* 表格样式 */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -21,59 +81,8 @@
       background-color: #ff99aa;
       color: white;
     }
-    .action-btn {
-      background-color: #ff69b4;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 4px 8px;
-      cursor: pointer;
-    }
-    .action-btn:hover {
-      background-color: #ff4f8b;
-    }
 
-    /* 登录区与管理区公共容器样式 */
-    #login-section, #manage-section {
-      max-width: 600px;
-      margin: 20px auto;
-      background: #fff0f8;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 20px;
-    }
-    #manage-section {
-      display: none;
-    }
-    #login-section h2, #manage-section h2 {
-      color: #c0392b;
-      margin-bottom: 10px;
-      text-align: center;
-    }
-    label {
-      display: block;
-      margin: 8px 0 4px;
-      font-size: 14px;
-    }
-    input[type=text], input[type=password] {
-      width: 100%;
-      padding: 6px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      margin-bottom: 10px;
-    }
-    #error, #info-message, #album-msg, #save-help-msg {
-      margin-top: 10px;
-      text-align: center;
-    }
-    #error {
-      color: red;
-    }
-    #info-message, #album-msg, #save-help-msg {
-      color: green;
-    }
-
-    /* 弹窗样式 */
+    /* 弹窗 */
     .overlay {
       position: fixed;
       top: 0; left: 0;
@@ -118,11 +127,6 @@
       background-color: #ff4f8b;
     }
 
-    /* 隐藏类 */
-    .hidden {
-      display: none;
-    }
-
     /* 回忆相册列表样式 */
     .album-list {
       display: flex;
@@ -160,11 +164,6 @@
     }
     .album-item .delete-btn:hover {
       background: rgba(255,0,0,1);
-    }
-
-    /* 管理区子面板切换 */
-    .manage-section {
-      margin-top: 20px;
     }
   </style>
 </head>
@@ -229,7 +228,7 @@
           </tr>
         </thead>
         <tbody>
-          <!-- 动态生成数据行 -->
+          <!-- 动态数据行 -->
         </tbody>
       </table>
       <div id="message"></div>
