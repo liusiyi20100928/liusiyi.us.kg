@@ -1,4 +1,10 @@
 [
-  "image/huiyi1.jpg",
-  "image/huiyi2.jpg"
+  {
+    "name": "运动会回忆",
+    "path": "image/huiyi1.jpg"
+  },
+  {
+    "name": "班级合影",
+    "path": "image/huiyi2.jpg"
+  }
 ]

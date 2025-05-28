@@ -1,35 +1,27 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
   <title>九年级回忆手册</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="background-blur"></div>
-  <div class="shooting-star"></div>
-  <div class="shooting-star"></div>
-  <div class="shooting-star"></div>
-  <div class="content">
+  <div class="main-content">
     <h1>九年级回忆手册</h1>
-    <button class="start-button" onclick="window.location.href='chaxun.html'">开始查询</button>
-    <button class="secret-button" onclick="toggleSecret()">我的秘密</button>
-    <div id="secret-content" class="secret-content">
-      <div class="heart">
-        <span>我爱你</span>
-        <div class="name">张雅娟</div>
+    <button class="metal-btn" onclick="window.location.href='chaxun.html'">开始查询</button>
+    <button class="red-btn" onclick="toggleSecret()">我的秘密</button>
+    <div id="secret-area" class="hidden">
+      <div class="secret-bg">
+        <div class="heart">💖<br />我爱你<br />张雅娟</div>
       </div>
     </div>
-    <footer>
-      <p onclick="toggleDeveloperInfo()">点击说明</p>
-      <div id="developer-info" class="developer-info">
-        <p>开发者：刘思奕</p>
-        <p>联系方式：14706654439</p>
-        <p>QQ：3573926115</p>
-      </div>
-    </footer>
+    <div id="dev-info" class="hidden">
+      <small>开发者：刘思奕 | 联系方式：14706654439 | QQ：3573926115</small>
+    </div>
   </div>
+  <canvas id="stars"></canvas>
   <script src="script.js"></script>
 </body>
 </html>
