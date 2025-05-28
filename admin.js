@@ -1,10 +1,12 @@
-/*==========================================
-  全局状态 & DOM 引用
-==========================================*/
+// ==========================================
+// 后台管理脚本：支持回忆相册 / 信息查询 / 寻求帮助 三个子面板
+// 已验证可正常切换、数据持久化，密码保存在 localStorage
+// ==========================================
+
 let repoOwner = "", repoName = "", authToken = "";
 let backendPass = "", localToken = "";
 
-// 存储 info.json、images.json、help.txt
+// 存放 info.json、images.json、help.txt 内容
 let infoData = [], infoSHA = "";
 let imagesData = [], imagesSHA = "";
 let helpSHA = "";
@@ -62,29 +64,30 @@ const btnSaveInfo     = document.getElementById("btn-save-info");
 const btnCancelInfo   = document.getElementById("btn-cancel-info");
 
 let editInfoIndex = -1;     // -1 = 添加；>=0 = 编辑
-let uploadedPhotoData = ""; // Base64 数据
+let uploadedPhotoData = ""; // 存储 Base64 图片数据
 
 /*==========================================
-  本地存储：令牌 & 密码
+  本地存储：后台密码 + GitHub 令牌
 ==========================================*/
 function saveCredentials(token, password) {
   localStorage.setItem("memoryManual_token", token);
   localStorage.setItem("memoryManual_pass", password);
 }
+
 function loadCredentials() {
-  localToken    = localStorage.getItem("memoryManual_token") || "";
-  backendPass   = localStorage.getItem("memoryManual_pass")  || "";
+  localToken  = localStorage.getItem("memoryManual_token")  || "";
+  backendPass = localStorage.getItem("memoryManual_pass")   || "";
 }
 
 /*==========================================
-  GitHub Contents API 操作
+  GitHub Contents API 操作封装
 ==========================================*/
 async function getFile(path) {
   const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`;
   const resp = await fetch(url, {
     headers: { Authorization: `token ${authToken}` }
   });
-  if (!resp.ok) throw new Error(`无法获取 ${path} (${resp.status})`);
+  if (!resp.ok) throw new Error(`无法获取 ${path} (状态码 ${resp.status})`);
   return resp.json();
 }
 
@@ -99,7 +102,7 @@ async function putFile(path, contentBase64, sha, message) {
     },
     body: JSON.stringify(body)
   });
-  if (!resp.ok) throw new Error(`无法更新 ${path} (${resp.status})`);
+  if (!resp.ok) throw new Error(`无法更新 ${path} (状态码 ${resp.status})`);
   return resp.json();
 }
 
@@ -113,16 +116,19 @@ async function deleteFile(path, sha, message) {
     },
     body: JSON.stringify({ message, sha })
   });
-  if (!resp.ok) throw new Error(`无法删除 ${path} (${resp.status})`);
+  if (!resp.ok) throw new Error(`无法删除 ${path} (状态码 ${resp.status})`);
   return resp.json();
 }
 
 /*==========================================
-  初始化：检查 localStorage
+  DOM 加载完成后，检查是否已登录过
 ==========================================*/
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", () => {
   loadCredentials();
-  if (backendPass && localToken) showManage();
+  if (backendPass && localToken) {
+    // 如果 localStorage 里已有密码和令牌，直接显示管理区
+    showManage();
+  }
 });
 
 /*==========================================
@@ -130,17 +136,18 @@ document.addEventListener("DOMContentLoaded", () => {
 ==========================================*/
 btnLogin.addEventListener("click", async () => {
   errorDiv.textContent = "";
-  const user = ghUserInput.value.trim();
-  const repo = ghRepoInput.value.trim();
-  const token= ghTokenInput.value.trim();
-  const pass = setPassInput.value.trim();
+
+  const user  = ghUserInput.value.trim();
+  const repo  = ghRepoInput.value.trim();
+  const token = ghTokenInput.value.trim();
+  const pass  = setPassInput.value.trim();
 
   if (!user || !repo || !token || !pass) {
-    errorDiv.textContent = "请完整填写用户/仓库/令牌/密码。";
+    errorDiv.textContent = "请完整填写 GitHub 用户名、仓库、令牌、后台密码。";
     return;
   }
   if (pass.length < 6) {
-    errorDiv.textContent = "密码至少 6 位。";
+    errorDiv.textContent = "后台密码至少 6 位。";
     return;
   }
 
@@ -149,12 +156,14 @@ btnLogin.addEventListener("click", async () => {
   authToken = token;
 
   try {
-    await getFile("data/info.json"); // 测试能否读取
+    // 测试能否读取 data/info.json
+    await getFile("data/info.json");
+    // 如果没抛错，说明令牌有效
     saveCredentials(token, pass);
     showManage();
   } catch (err) {
     console.error(err);
-    errorDiv.textContent = "GitHub 验证失败，请检查信息。";
+    errorDiv.textContent = "GitHub 验证失败，请检查用户名/仓库/令牌。";
   }
 });
 
@@ -168,7 +177,7 @@ btnLogout.addEventListener("click", () => {
 });
 
 /*==========================================
-  显示后台管理区
+  显示管理区主面板，并加载子面板数据
 ==========================================*/
 function showManage() {
   loginSection.style.display = "none";
@@ -180,7 +189,7 @@ function showManage() {
 }
 
 /*==========================================
-  切换子面板
+  切换子面板事件绑定
 ==========================================*/
 btnManageAlbum.addEventListener("click", () => {
   albumSection.classList.remove("hidden");
@@ -241,7 +250,7 @@ btnUploadAlbum.addEventListener("click", () => {
   const nameVal = albumNameInput.value.trim();
   const file    = albumUploadInput.files[0];
   if (!nameVal || !file) {
-    albumMsgDiv.textContent = "请填写名称并选择图片。";
+    albumMsgDiv.textContent = "请填写图片名称并选择文件。";
     return;
   }
   const reader = new FileReader();
@@ -251,7 +260,7 @@ btnUploadAlbum.addEventListener("click", () => {
       const filename   = `huiyi_${Date.now()}.jpg`;
       const newPath    = `image/${filename}`;
 
-      // 上传图片
+      // 上传图片到仓库
       await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${newPath}`, {
         method: "PUT",
         headers: {
@@ -264,13 +273,14 @@ btnUploadAlbum.addEventListener("click", () => {
         })
       });
 
-      // 更新 images.json
+      // 更新 data/images.json
       const data = await getFile("data/images.json");
       imagesData = JSON.parse(atob(data.content));
       imagesData.push({ name: nameVal, path: newPath });
       imagesSHA = data.sha;
       const updated = btoa(JSON.stringify(imagesData, null, 2));
       await putFile("data/images.json", updated, imagesSHA, "更新 images.json，添加相册");
+
       renderAlbumList(imagesData);
       albumMsgDiv.textContent = "上传成功！";
       albumNameInput.value = "";
@@ -296,6 +306,7 @@ async function deleteAlbum(idx) {
     imagesSHA = data.sha;
     const updated = btoa(JSON.stringify(imagesData, null, 2));
     await putFile("data/images.json", updated, imagesSHA, "更新 images.json，删除相册");
+
     renderAlbumList(imagesData);
     albumMsgDiv.textContent = "删除成功！";
   } catch (err) {
@@ -525,7 +536,7 @@ btnSaveHelp.addEventListener("click", async () => {
 });
 
 /*==========================================
-  初次加载：读取所有数据
+  初次加载时调用，读取 data/ 下所有数据
 ==========================================*/
 async function loadAllSections() {
   await loadImagesJSON();
