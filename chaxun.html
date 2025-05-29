@@ -4,158 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>九年级回忆手册 - 查询页面</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      min-height: 100%;
-      overflow-y: auto;  /* 允许竖向滚动 */
-      background-color: #ffeef0;
-      font-family: "Arial", sans-serif;
-    }
-    .container {
-      max-width: 600px;
-      margin: 30px auto;
-      padding: 20px;
-      background: #fff0f8;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .container h1 {
-      margin-bottom: 20px;
-      color: #d6336c;
-    }
-    .btn-container {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .btn-container button {
-      background-color: #ff69b4;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 16px;
-      cursor: pointer;
-      margin: 0 5px;
-    }
-    .btn-container button:hover {
-      background-color: #ff4f8b;
-    }
-    .hidden { display: none; }
-    .album-item {
-      margin-bottom: 25px;
-      text-align: center;
-    }
-    .album-item .album-name {
-      font-size: 18px;
-      color: #c0392b;
-      margin-bottom: 8px;
-    }
-    .album-item img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 15px;
-    }
-    form input, form button {
-      flex: 1 1 45%;
-      min-width: 120px;
-      padding: 8px 12px;
-      font-size: 16px;
-      border: none;
-      background-color: lightpink;
-      border-radius: 8px;
-    }
-    form button {
-      background-color: #ff69b4;
-      color: white;
-      cursor: pointer;
-    }
-    #result {
-      margin-top: 20px;
-      text-align: center;
-    }
-    .student-card img {
-      width: 150px; height: 150px;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 2px solid #ffaad4;
-    }
-    .student-card p {
-      margin: 5px 0;
-      font-size: 16px;
-      color: #333;
-    }
-    .help-text {
-      font-size: 18px;
-      color: #333;
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    .qq-link {
-      display: inline-block;
-      font-size: 18px;
-      color: white;
-      background-color: #00c4c4;
-      padding: 10px 20px;
-      border-radius: 12px;
-      text-decoration: none;
-      transition: background-color 0.3s;
-    }
-    .qq-link:hover {
-      background-color: #00a0a0;
-    }
-    @media screen and (max-width: 600px) {
-      form input, form button {
-        flex: 1 1 100%;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="container">
     <h1>查询页面</h1>
-
     <div class="btn-container">
       <button id="btn-album">回忆相册</button>
       <button id="btn-info">信息查询</button>
       <button id="btn-help">寻求帮助</button>
     </div>
-
-    <!-- 回忆相册 区 -->
-    <div id="section-album" class="section-content">
-      <!-- 动态渲染相册项 -->
-    </div>
-
-    <!-- 信息查询 区 -->
+    <div id="section-album" class="section-content"></div>
     <div id="section-info" class="section-content hidden">
       <form id="searchForm">
-        <input type="text" id="inq-name"    placeholder="姓名"  />
-        <input type="text" id="inq-id"      placeholder="编号"  />
-        <input type="text" id="inq-class"   placeholder="班级"  />
-        <input type="text" id="inq-phone"   placeholder="电话"  />
-        <input type="text" id="inq-qq"      placeholder="QQ"    />
-        <input type="text" id="inq-wechat"  placeholder="微信"  />
+        <input type="text" id="inq-name" placeholder="姓名 或 编号" required />
         <button type="submit">查询</button>
       </form>
       <div id="result"></div>
     </div>
-
-    <!-- 寻求帮助 区 -->
-    <div id="section-help" class="section-content hidden">
-      <!-- 动态渲染帮助链接 -->
-    </div>
+    <div id="section-help" class="section-content hidden"></div>
   </div>
-
-  <script src="js/main.js"></script>
+  <script src="chaxun.js"></script>
 </body>
 </html>

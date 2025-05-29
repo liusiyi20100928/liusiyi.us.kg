@@ -4,166 +4,24 @@
   <meta charset="UTF-8" />
   <title>九年级回忆手册</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="meteor.css" />
-  <style>
-    /* 背景模糊层 */
-    .background-blur {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: url('image/neijing.jpg') no-repeat center center fixed;
-      background-size: cover;
-      filter: blur(5px);
-      z-index: -2;
-    }
-
-    /* 主内容区 */
-    .main-content {
-      position: relative;
-      text-align: center;
-      padding-top: 80px;
-      padding-bottom: 40px; /* 底部留出滚动空间 */
-      z-index: 1;
-    }
-    .main-content h1 {
-      color: blue;
-      font-size: 2.5em;
-      margin-bottom: 20px;
-    }
-
-    .metal-btn {
-      background: linear-gradient(145deg, #ffb6c1, #ff69b4);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 12px 30px;
-      font-size: 18px;
-      cursor: pointer;
-      margin: 0 10px;
-    }
-    .red-btn {
-      background: red;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 12px 24px;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    .hidden {
-      display: none;
-    }
-    .secret-bg {
-      background: #fff0f8;
-      padding: 30px;
-      margin: 20px auto;
-      width: 280px;
-      border-radius: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .heart {
-      color: red;
-      font-size: 24px;
-      line-height: 1.5;
-      text-align: center;
-    }
-
-    #dev-info {
-      margin-top: 30px;
-      color: gray;
-      font-size: 0.9em;
-    }
-
-    /* 允许页面滚动 */
-    html, body {
-      margin: 0;
-      padding: 0;
-      min-height: 100%;
-      overflow-y: auto;
-      font-family: "Arial", sans-serif;
-      background-color: #ffeef0;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="background-blur"></div>
-
   <div class="main-content">
     <h1>九年级回忆手册</h1>
-    <button class="metal-btn" onclick="location.href='chaxun.html'">开始查询</button>
+    <button class="metal-btn" onclick="window.location.href='chaxun.html'">开始查询</button>
     <button class="red-btn" onclick="toggleSecret()">我的秘密</button>
-
     <div id="secret-area" class="hidden">
       <div class="secret-bg">
-        <div class="heart">💖<br />我喜欢你你<br />张雅娟</div>
+        <div class="heart">💖<br />我爱你<br />张雅娟</div>
       </div>
     </div>
-
     <div id="dev-info" class="hidden">
       <small>开发者：刘思奕 | 联系方式：14706654439 | QQ：3573926115</small>
     </div>
   </div>
-
-  <!-- 星空与多颗流星画布 -->
   <canvas id="stars"></canvas>
-  <script src="meteor.js"></script>
-
-  <script>
-    function toggleSecret() {
-      const secret = document.getElementById('secret-area');
-      const devInfo = document.getElementById('dev-info');
-      if (secret.classList.contains('hidden')) {
-        secret.classList.remove('hidden');
-        devInfo.classList.remove('hidden');
-      } else {
-        secret.classList.add('hidden');
-        devInfo.classList.add('hidden');
-      }
-    }
-
-    // 流星动画初始化
-    const canvas = document.getElementById("stars");
-    const ctx = canvas.getContext("2d");
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
-
-    let meteors = [];
-    function createMeteor() {
-      const length = Math.random() * 50 + 20;
-      const speed  = Math.random() * 4 + 2;
-      const startX = Math.random() * canvas.width;
-      const startY = -length;
-      const angle = Math.PI / 4;
-      const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed;
-      meteors.push({ x: startX, y: startY, len: length, vx, vy });
-    }
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (Math.random() < 0.02) createMeteor();
-      for (let i = meteors.length - 1; i >= 0; i--) {
-        const m = meteors[i];
-        ctx.beginPath();
-        ctx.strokeStyle = "white";
-        ctx.moveTo(m.x, m.y);
-        ctx.lineTo(
-          m.x + m.len * Math.cos(Math.PI / 4),
-          m.y + m.len * Math.sin(Math.PI / 4)
-        );
-        ctx.stroke();
-        m.x += m.vx;
-        m.y += m.vy;
-        if (m.x > canvas.width || m.y > canvas.height) meteors.splice(i, 1);
-      }
-      requestAnimationFrame(draw);
-    }
-    draw();
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
