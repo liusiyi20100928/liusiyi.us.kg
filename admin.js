@@ -1,16 +1,19 @@
 // ====== 初始化变量 ======
 let repoOwner = "", repoName = "", authToken = "", backendPass = "", localToken = "";
 let infoData = [], infoSHA = "";
+
 const loginSection = document.getElementById("login-section");
 const manageSection = document.getElementById("manage-section");
 const errorDiv = document.getElementById("error");
 const messageDiv = document.getElementById("message");
+
 const ghUserInput = document.getElementById("gh-username");
 const ghRepoInput = document.getElementById("gh-repo");
 const ghTokenInput = document.getElementById("gh-token");
 const setPassInput = document.getElementById("set-pass");
 const btnLogin = document.getElementById("btn-login");
 const btnLogout = document.getElementById("btn-logout");
+
 const searchInput = document.getElementById("search-input");
 const infoTableBody = document.querySelector("#info-table tbody");
 const btnAdd = document.getElementById("btn-add");
@@ -26,6 +29,7 @@ const inpPhoto = document.getElementById("inp-photo");
 const photoPreview = document.getElementById("photo-preview");
 const btnSave = document.getElementById("btn-save");
 const btnCancel = document.getElementById("btn-cancel");
+
 let editIndex = -1;
 let uploadedPhotoData = "";
 
@@ -47,7 +51,7 @@ function loadCredentials() {
 async function getFile(path) {
   const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`;
   const resp = await fetch(url, { headers: { Authorization: `token ${authToken}` } });
-  if (!resp.ok) throw new Error(`无法获取 ${path}`);
+  if (!resp.ok) throw new Error(`无法获取 ${path} (HTTP ${resp.status})`);
   return resp.json();
 }
 async function putFile(path, contentBase64, sha, message) {
@@ -58,7 +62,7 @@ async function putFile(path, contentBase64, sha, message) {
     headers: { Authorization: `token ${authToken}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!resp.ok) throw new Error(`无法更新 ${path}`);
+  if (!resp.ok) throw new Error(`无法更新 ${path} (HTTP ${resp.status})`);
   return resp.json();
 }
 
@@ -139,8 +143,12 @@ function renderTable(arr) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><img src="${item.photo}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;" /></td>
-      <td>${item.name}</td><td>${item.id}</td><td>${item.class}</td>
-      <td>${item.phone}</td><td>${item.qq}</td><td>${item.wechat}</td>
+      <td>${item.name}</td>
+      <td>${item.id}</td>
+      <td>${item.class}</td>
+      <td>${item.phone}</td>
+      <td>${item.qq}</td>
+      <td>${item.wechat}</td>
       <td>
         <button class="action-btn" onclick="openEdit(${idx})">编辑</button>
         <button class="action-btn" onclick="handleDelete(${idx})" style="background-color:#e74c3c;">删除</button>
@@ -209,13 +217,26 @@ function openEdit(idx) {
 // ====== 删除记录 ======
 async function handleDelete(idx) {
   if (!confirm("确定删除？")) return;
-  infoData.splice(idx, 1);
+
   try {
+    // 1. 重新拉取最新的 info.json，获取最新的 infoSHA 和 infoData
+    const jsonResp = await getFile("data/info.json");
+    infoSHA = jsonResp.sha;
+    infoData = JSON.parse(atob(jsonResp.content));
+
+    // 2. 从数组中移除指定项
+    infoData.splice(idx, 1);
+
+    // 3. PUT 回去最新的 info.json
     const updated = btoa(JSON.stringify(infoData, null, 2));
     await putFile("data/info.json", updated, infoSHA, "删除记录");
-    const res = await getFile("data/info.json");
-    infoSHA = res.sha;
-    infoData = JSON.parse(atob(res.content));
+
+    // 4. 重新 getFile 同步本地 state
+    const finalResp = await getFile("data/info.json");
+    infoSHA = finalResp.sha;
+    infoData = JSON.parse(atob(finalResp.content));
+
+    // 5. 重新渲染表格
     renderTable(infoData);
     messageDiv.textContent = "删除成功！";
   } catch (err) {
@@ -245,11 +266,14 @@ btnSave.addEventListener("click", async () => {
   const phoneVal = inpPhone.value.trim();
   const qqVal = inpQQ.value.trim();
   const wechatVal = inpWechat.value.trim();
+
   if (!nameVal || !idVal || !classVal || !phoneVal || !qqVal || !wechatVal) {
     messageDiv.textContent = "请填写所有字段。";
     return;
   }
+
   try {
+    // 1. 如果有新照片需要上传，则先上传照片
     let photoPath = "";
     if (uploadedPhotoData) {
       const filename = `stu_${Date.now()}.jpg`;
@@ -268,7 +292,14 @@ btnSave.addEventListener("click", async () => {
       photoPath = newPath;
     }
 
+    // 2. 重新拉取最新的 info.json，获取最新的 infoSHA 和 infoData
+    const jsonResp = await getFile("data/info.json");
+    infoSHA = jsonResp.sha;
+    infoData = JSON.parse(atob(jsonResp.content));
+
+    // 3. 根据 editIndex 判断是“编辑”还是“新增”
     if (editIndex >= 0) {
+      // 编辑
       const old = infoData[editIndex];
       photoPath = photoPath || old.photo;
       infoData[editIndex] = {
@@ -281,6 +312,7 @@ btnSave.addEventListener("click", async () => {
         photo: photoPath,
       };
     } else {
+      // 新增
       photoPath = photoPath || "image/sample.jpg";
       infoData.push({
         name: nameVal,
@@ -293,11 +325,16 @@ btnSave.addEventListener("click", async () => {
       });
     }
 
+    // 4. PUT 回去最新的 info.json
     const updated = btoa(JSON.stringify(infoData, null, 2));
     await putFile("data/info.json", updated, infoSHA, "更新 info.json");
-    const data = await getFile("data/info.json");
-    infoSHA = data.sha;
-    infoData = JSON.parse(atob(data.content));
+
+    // 5. 重新 getFile 同步本地 state
+    const finalResp = await getFile("data/info.json");
+    infoSHA = finalResp.sha;
+    infoData = JSON.parse(atob(finalResp.content));
+
+    // 6. 重新渲染表格
     renderTable(infoData);
     messageDiv.textContent = "保存成功！";
     overlay.style.display = "none";
