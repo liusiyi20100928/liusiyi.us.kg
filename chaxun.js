@@ -7,6 +7,10 @@ const secAlbum = document.getElementById("section-album");
 const secInfo  = document.getElementById("section-info");
 const secHelp  = document.getElementById("section-help");
 
+const form     = document.getElementById("searchForm");
+const resultDiv = document.getElementById("result");
+
+// 页面初始：仅显示“回忆相册”
 secAlbum.style.display = "block";
 secInfo.style.display  = "none";
 secHelp.style.display  = "none";
@@ -24,8 +28,9 @@ btnInfo.addEventListener("click", () => {
   secAlbum.style.display = "none";
   secInfo.style.display  = "block";
   secHelp.style.display  = "none";
-  document.getElementById("result").innerHTML = "";
-  document.getElementById("searchForm").reset();
+  // 清空上次查询结果与输入框
+  resultDiv.innerHTML = "";
+  form.reset();
 });
 
 // —— 切换到“寻求帮助” —— 
@@ -36,14 +41,14 @@ btnHelp.addEventListener("click", () => {
   loadHelp();
 });
 
-// —— 加载回忆相册 —— 
+// —— 异步加载并渲染“回忆相册” —— 
 async function loadAlbum() {
-  secAlbum.innerHTML = "";
+  secAlbum.innerHTML = ""; // 先清空
   try {
     const resp = await fetch("data/images.json");
     if (!resp.ok) throw new Error("加载 images.json 失败");
     const data = await resp.json();
-    if (!data.length) {
+    if (!Array.isArray(data) || data.length === 0) {
       secAlbum.innerHTML = '<p class="notice">暂无回忆相册。</p>';
       return;
     }
@@ -60,31 +65,37 @@ async function loadAlbum() {
     secAlbum.innerHTML = '<p class="notice">加载相册失败。</p>';
   }
 }
-
 // 页面初次加载时渲染一次“回忆相册”
 loadAlbum();
 
 
-// —— 信息查询 —— 
-const form = document.getElementById("searchForm");
-const resultDiv = document.getElementById("result");
-
+// —— 信息查询：提交表单时触发 —— 
 form.addEventListener("submit", async function(e) {
   e.preventDefault();
   const keyword = document.getElementById("inq-name").value.trim();
+  resultDiv.innerHTML = ""; // 清空上次结果
+
+  if (!keyword) {
+    resultDiv.innerHTML = `<p>请输入姓名或编号进行查询。</p>`;
+    return;
+  }
 
   try {
     const resp = await fetch("data/info.json");
     if (!resp.ok) throw new Error("加载 info.json 失败");
     const data = await resp.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      resultDiv.innerHTML = `<p>当前无任何信息数据。</p>`;
+      return;
+    }
 
-    // 用 filter 找到所有 “姓名 等于 keyword” 或 “编号 等于 keyword” 的记录
-    const matches = data.filter(item => item.name === keyword || item.id === keyword);
+    // 过滤所有“姓名 等于 keyword” 或 “编号 等于 keyword”的记录
+    const matches = data.filter(item => {
+      return item.name === keyword || item.id === keyword;
+    });
 
     if (matches.length > 0) {
-      // 清空之前结果
-      resultDiv.innerHTML = "";
-      // 循环创建多个“学生卡片”
+      // 循环渲染每一个匹配到的学生信息卡片
       matches.forEach(student => {
         const card = document.createElement("div");
         card.className = "student-card";
@@ -100,7 +111,7 @@ form.addEventListener("submit", async function(e) {
         resultDiv.appendChild(card);
       });
     } else {
-      resultDiv.innerHTML = `<p>未找到匹配信息</p>`;
+      resultDiv.innerHTML = `<p>未找到匹配信息。</p>`;
     }
   } catch (err) {
     console.error(err);
@@ -109,13 +120,17 @@ form.addEventListener("submit", async function(e) {
 });
 
 
-// —— 寻求帮助 —— 
+// —— 寻求帮助：加载 data/help.txt 并渲染 —— 
 async function loadHelp() {
-  secHelp.innerHTML = "";
+  secHelp.innerHTML = ""; // 清空
   try {
     const resp = await fetch("data/help.txt");
     if (!resp.ok) throw new Error("加载 help.txt 失败");
     const link = (await resp.text()).trim();
+    if (!link) {
+      secHelp.innerHTML = `<p class="notice">暂无帮助链接。</p>`;
+      return;
+    }
     secHelp.innerHTML = `
       <p class="help-text">点击下面按钮加入QQ群：</p>
       <p><a href="${link}" target="_blank" class="qq-link">加入QQ群</a></p>`;
