@@ -1,18 +1,20 @@
 [
   {
-    "name": "何雨晨",
-    "name": "何雨",
     "id": "A001",
+    "name": "张三",
+    "class": "九年级3班",
+    "phone": "1234567890",
+    "qq": "123456",
+    "wechat": "zhangsan123",
+    "photo": "image/sample.jpg"
+  },
+  {
     "id": "A002",
+    "name": "李四",
     "class": "九年级3班",
-    "class": "九年级3班",
-    "phone": "未知",
-    "phone": "未知",
-    "qq": "2871968258",
-    "qq": "2871968258",
-    "wechat": "未知",
-    "wechat": "未知",
-    "photo": "image/sample.jpg"
-    "photo": "image/sample.jpg"
+    "phone": "0987654321",
+    "qq": "654321",
+    "wechat": "lisi456",
+    "photo": "image/stu_1623456789.jpg"
   }
 ]
