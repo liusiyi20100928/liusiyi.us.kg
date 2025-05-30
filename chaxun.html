@@ -9,12 +9,17 @@
 <body>
   <div class="container">
     <h1>查询页面</h1>
+
     <div class="btn-container">
       <button id="btn-album">回忆相册</button>
       <button id="btn-info">信息查询</button>
       <button id="btn-help">寻求帮助</button>
     </div>
+
+    <!-- 回忆相册 区 -->
     <div id="section-album" class="section-content"></div>
+
+    <!-- 信息查询 区 -->
     <div id="section-info" class="section-content hidden">
       <form id="searchForm">
         <input type="text" id="inq-name" placeholder="姓名 或 编号" required />
@@ -22,8 +27,11 @@
       </form>
       <div id="result"></div>
     </div>
+
+    <!-- 寻求帮助 区 -->
     <div id="section-help" class="section-content hidden"></div>
   </div>
+
   <script src="chaxun.js"></script>
 </body>
 </html>
