@@ -72,13 +72,16 @@ loadAlbum();
 // —— 信息查询：提交表单时触发 —— 
 form.addEventListener("submit", async function(e) {
   e.preventDefault();
-  const keyword = document.getElementById("inq-name").value.trim();
+  const rawKeyword = document.getElementById("inq-name").value.trim();
   resultDiv.innerHTML = ""; // 清空上次结果
 
-  if (!keyword) {
+  if (!rawKeyword) {
     resultDiv.innerHTML = `<p>请输入姓名或编号进行查询。</p>`;
     return;
   }
+
+  // 转成小写，用于不区分大小写匹配
+  const keyword = rawKeyword.toLowerCase();
 
   try {
     const resp = await fetch("data/info.json");
@@ -89,9 +92,11 @@ form.addEventListener("submit", async function(e) {
       return;
     }
 
-    // 过滤所有“姓名 等于 keyword” 或 “编号 等于 keyword”的记录
+    // 过滤：姓名或编号包含关键字（不区分大小写）
     const matches = data.filter(item => {
-      return item.name === keyword || item.id === keyword;
+      const nameLower = item.name.toLowerCase();
+      const idLower   = item.id.toLowerCase();
+      return nameLower.includes(keyword) || idLower.includes(keyword);
     });
 
     if (matches.length > 0) {
