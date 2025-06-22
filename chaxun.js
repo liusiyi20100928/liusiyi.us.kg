@@ -1,7 +1,6 @@
 // —— DOM 引用 —— 
 const btnAlbum = document.getElementById("btn-album");
 const btnInfo  = document.getElementById("btn-info");
-const btnHelp  = document.getElementById("btn-help");
 
 const secAlbum = document.getElementById("section-album");
 const secInfo  = document.getElementById("section-info");
@@ -33,13 +32,11 @@ btnInfo.addEventListener("click", () => {
   form.reset();
 });
 
-// —— 切换到“寻求帮助” —— 
-btnHelp.addEventListener("click", () => {
-  secAlbum.style.display = "none";
-  secInfo.style.display  = "none";
-  secHelp.style.display  = "block";
-  loadHelp();
-});
+// —— 固定显示“寻求帮助”文字 —— 
+secHelp.innerHTML = `
+  <p class="notice">如果需要帮助，请联系我</p>
+  <p>qq:3573926115 wx:14706654439  Phone:14706654439</p>
+`;
 
 // —— 异步加载并渲染“回忆相册” —— 
 async function loadAlbum() {
@@ -123,24 +120,3 @@ form.addEventListener("submit", async function(e) {
     resultDiv.innerHTML = `<p>查询失败，请稍后再试。</p>`;
   }
 });
-
-
-// —— 寻求帮助：加载 data/help.txt 并渲染 —— 
-async function loadHelp() {
-  secHelp.innerHTML = ""; // 清空
-  try {
-    const resp = await fetch("data/help.txt");
-    if (!resp.ok) throw new Error("加载 help.txt 失败");
-    const link = (await resp.text()).trim();
-    if (!link) {
-      secHelp.innerHTML = `<p class="notice">暂无帮助链接。</p>`;
-      return;
-    }
-    secHelp.innerHTML = `
-      <p class="help-text">点击下面按钮加入QQ群：</p>
-      <p><a href="${link}" target="_blank" class="qq-link">加入QQ群</a></p>`;
-  } catch (err) {
-    console.error(err);
-    secHelp.innerHTML = `<p class="notice">加载帮助链接失败。</p>`;
-  }
-}
