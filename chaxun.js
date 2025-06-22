@@ -137,6 +137,10 @@ async function loadHelp() {
       return;
     }
     secHelp.innerHTML = `
-      <p class="help-text">加开发者qq：3573926115：</p>`;
+      <p class="help-text">点击下面按钮加入QQ群：</p>
+      <p><a href="${link}" target="_blank" class="qq-link">加入QQ群</a></p>`;
+  } catch (err) {
+    console.error(err);
+    secHelp.innerHTML = `<p class="notice">加载帮助链接失败。</p>`;
   }
 }
