@@ -138,7 +138,7 @@ async function loadHelp() {
     }
     secHelp.innerHTML = `
       <p class="help-text">加qq:3573926115</p>
-      <p><a href="${link}" target="_blank" class="qq-link">加入QQ群</a></p>`;
+      <p><a href="${link}" target="_blank" class="qq-link">无效按钮</a></p>`;
   } catch (err) {
     console.error(err);
     secHelp.innerHTML = `<p class="notice">加载帮助链接失败。</p>`;
